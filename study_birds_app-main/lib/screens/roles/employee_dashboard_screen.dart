@@ -28,7 +28,7 @@ import 'employee_consultations_screen.dart';
 /// the web's canAccessEmployeePage/employeeHome logic exactly.
 ///
 /// [_sectionScreens] is the registry mapping a section key to its real
-/// Flutter screen — all 29 sections in employeeSections.json now have one.
+/// Flutter screen — all 30 sections in employeeSections.json now have one.
 class EmployeeDashboardScreen extends StatefulWidget {
   final AuthUser user;
   const EmployeeDashboardScreen({super.key, required this.user});
