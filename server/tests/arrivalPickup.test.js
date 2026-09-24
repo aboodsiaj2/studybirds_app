@@ -12,12 +12,14 @@ test('staff can assign an airport driver and a travel alert; students see only t
   try {
     await mongoose.connect(mongo.getUri());
     const User = require('../src/models/User');
+    const StudentProfile = require('../src/models/StudentProfile');
     const ArrivalServiceRequest = require('../src/models/ArrivalServiceRequest');
     const student = await User.create({ name: 'Student', email: 'student@example.test' });
     const other = await User.create({ name: 'Other', email: 'other@example.test' });
     const arrivalsOfficer = await User.create({ name: 'Arrivals Officer', email: 'arrivals@example.test', role: 'employee', permissions: ['student-arrivals'] });
     const admissions = await User.create({ name: 'Admissions', email: 'admissions@example.test', role: 'employee', permissions: ['applications'] });
     const request = await ArrivalServiceRequest.create({ student: student._id, flightNumber: 'TK123', airport: 'IST', services: { airportPickup: true } });
+    await StudentProfile.create({ user: student._id, applicationStage: 'final-accepted' });
     server = await new Promise(resolve => { const s = require('../src/app').listen(0, '127.0.0.1', () => resolve(s)); });
     async function call(method, endpoint, user, body, expected = 200) {
       const response = await fetch(`http://127.0.0.1:${server.address().port}/api${endpoint}`, { method,
@@ -34,6 +36,7 @@ test('staff can assign an airport driver and a travel alert; students see only t
     await call('PATCH', route, arrivalsOfficer, { pickup: { status: 'invented-status' } }, 400);
 
     const assigned = await call('PATCH', route, arrivalsOfficer, {
+      status: 'in-progress',
       pickup: { status: 'assigned', driverName: 'Ahmed', driverPhone: '+905551234567' },
       travelAlert: 'الطقس ماطر، أحضر مظلة عند الوصول',
     });
@@ -47,6 +50,14 @@ test('staff can assign an airport driver and a travel alert; students see only t
     assert.ok(arrived.pickup.confirmedAt);
     // Driver details already set are preserved when only the status changes.
     assert.equal(arrived.pickup.driverName, 'Ahmed');
+
+    // Editing flight details must preserve staff workflow and pickup data.
+    const edited = await call('PUT', '/students/arrival-services', student, {
+      flightNumber: 'TK456', airport: 'SAW', services: { airportPickup: true },
+    });
+    assert.equal(edited.status, 'in-progress');
+    assert.equal(edited.pickup.status, 'arrived');
+    assert.equal(edited.pickup.driverName, 'Ahmed');
 
     // The student reads their own request with the pickup and alert visible.
     const mine = await call('GET', '/students/arrival-services', student);

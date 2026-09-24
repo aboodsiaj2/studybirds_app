@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/app_theme.dart';
 import '../../core/api_client.dart';
 import '../../core/student_repository.dart';
+import 'visa_travel_screens.dart' show VisaCenterScreen;
 
 class AccommodationScreen extends StatefulWidget {
   const AccommodationScreen({super.key});
@@ -270,59 +271,152 @@ class _AccommodationScreenState extends State<AccommodationScreen> {
                 ]));
 }
 
-class UniversityRegistrationScreen extends StatelessWidget {
+class UniversityRegistrationScreen extends StatefulWidget {
   const UniversityRegistrationScreen({super.key});
+
+  @override
+  State<UniversityRegistrationScreen> createState() =>
+      _UniversityRegistrationScreenState();
+}
+
+class _UniversityRegistrationScreenState
+    extends State<UniversityRegistrationScreen> {
+  bool loading = true;
+  String? error, selectedId;
+  List<Map<String, dynamic>> applications = [];
+  Map<String, dynamic>? stage;
+
+  static const statuses = {
+    'not-started': 'لم تبدأ',
+    'in-progress': 'قيد التنفيذ',
+    'action-required': 'مطلوب إجراء منك',
+    'waiting-team': 'بانتظار فريق Study Birds',
+    'waiting-university': 'بانتظار الجامعة',
+    'completed': 'مكتملة',
+    'not-required': 'غير مطلوبة',
+    'overdue': 'متأخرة',
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    load();
+  }
+
+  Future<void> load([String? id]) async {
+    setState(() {
+      loading = true;
+      error = null;
+    });
+    try {
+      if (applications.isEmpty) {
+        applications = (await StudentRepository.instance.getApplications())
+            .whereType<Map>()
+            .map((e) => Map<String, dynamic>.from(e))
+            .toList();
+      }
+      selectedId = id ??
+          selectedId ??
+          (applications.isEmpty ? null : '${applications.first['_id']}');
+      if (selectedId != null) {
+        final data =
+            await StudentRepository.instance.getPostAdmission(selectedId!);
+        stage = (data['stages'] as List? ?? [])
+            .whereType<Map>()
+            .map((e) => Map<String, dynamic>.from(e))
+            .cast<Map<String, dynamic>?>()
+            .firstWhere((e) => e?['key'] == 'registration', orElse: () => null);
+      }
+    } catch (e) {
+      error = e is ApiException ? e.message : 'تعذر تحميل حالة التسجيل.';
+    }
+    if (mounted) setState(() => loading = false);
+  }
+
+  String label(Map<String, dynamic> app) {
+    String value(dynamic item) => item is Map
+        ? '${item['title'] ?? item['name'] ?? ''}'
+        : '${item ?? ''}';
+    final parts = [value(app['program']), value(app['university'])]
+        .where((e) => e.isNotEmpty)
+        .toList();
+    return parts.isEmpty ? 'طلب جامعي' : parts.join(' — ');
+  }
 
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
       title: 'تسجيل الجامعة',
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Align(
-                alignment: Alignment.centerRight,
-                child: StatusBadge(
-                    label: 'بانتظار الموعد', color: AppColors.warning)),
-            const SizedBox(height: 16),
-            const Text('المستندات المطلوبة', style: AppTextStyles.sectionLabel),
-            const SizedBox(height: 10),
-            AppCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Text('• جواز السفر الأصلي', style: AppTextStyles.body),
-                  SizedBox(height: 6),
-                  Text('• خطاب القبول النهائي', style: AppTextStyles.body),
-                  SizedBox(height: 6),
-                  Text('• إيصال دفع الرسوم', style: AppTextStyles.body),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Text('الموعد', style: AppTextStyles.sectionLabel),
-            const SizedBox(height: 10),
-            AppCard(
-              child: Row(
-                children: const [
-                  Icon(Icons.school_rounded, color: AppColors.navy),
-                  SizedBox(width: 10),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('13 أكتوبر 2026', style: AppTextStyles.cardTitle),
-                      Text('الحرم الجامعي الرئيسي',
-                          style: AppTextStyles.caption),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
+      actions: [
+        IconButton(
+            onPressed: loading ? null : load, icon: const Icon(Icons.refresh))
+      ],
+      body: loading
+          ? const LoadingState(message: 'جارٍ تحميل حالة التسجيل...')
+          : error != null
+              ? ErrorState(message: error!, onRetry: load)
+              : applications.isEmpty
+                  ? const EmptyState(
+                      icon: Icons.school_outlined,
+                      title: 'لا توجد طلبات جامعية',
+                      message: 'تظهر متابعة التسجيل بعد إنشاء طلب جامعي.')
+                  : ListView(padding: const EdgeInsets.all(16), children: [
+                      if (applications.length > 1) ...[
+                        DropdownButtonFormField<String>(
+                          initialValue: selectedId,
+                          decoration:
+                              const InputDecoration(labelText: 'الطلب الجامعي'),
+                          items: applications
+                              .map((a) => DropdownMenuItem(
+                                  value: '${a['_id']}',
+                                  child: Text(label(a),
+                                      overflow: TextOverflow.ellipsis)))
+                              .toList(),
+                          onChanged: (v) {
+                            if (v != null) load(v);
+                          },
+                        ),
+                        const SizedBox(height: 14),
+                      ],
+                      if (stage == null)
+                        const EmptyState(
+                            icon: Icons.schedule_outlined,
+                            title: 'لم تبدأ متابعة التسجيل',
+                            message:
+                                'سيضيف الفريق تفاصيل المرحلة بعد القبول النهائي.')
+                      else ...[
+                        Align(
+                            alignment: Alignment.centerRight,
+                            child: StatusBadge(
+                                label: statuses['${stage!['status']}'] ??
+                                    '${stage!['status']}',
+                                color: stage!['status'] == 'completed'
+                                    ? AppColors.success
+                                    : stage!['status'] == 'overdue'
+                                        ? AppColors.danger
+                                        : AppColors.warning)),
+                        const SizedBox(height: 14),
+                        AppCard(
+                            child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                              Text('${stage!['descriptionAr'] ?? ''}',
+                                  style: AppTextStyles.body),
+                              if ('${stage!['reference'] ?? ''}'
+                                  .isNotEmpty) ...[
+                                const SizedBox(height: 8),
+                                Text('مرجع المتابعة: ${stage!['reference']}',
+                                    style: AppTextStyles.caption)
+                              ],
+                              if (stage!['dueAt'] != null) ...[
+                                const SizedBox(height: 8),
+                                Text(
+                                    'الموعد: ${DateTime.tryParse('${stage!['dueAt']}')?.toLocal().toString().split(' ').first ?? ''}',
+                                    style: AppTextStyles.caption)
+                              ],
+                            ])),
+                      ],
+                    ]),
     );
   }
 }
@@ -330,8 +424,7 @@ class UniversityRegistrationScreen extends StatelessWidget {
 class InsuranceScreen extends StatelessWidget {
   const InsuranceScreen({super.key});
   @override
-  Widget build(BuildContext context) =>
-      const NewSupportTicketScreen(initialSubject: 'طلب تأمين');
+  Widget build(BuildContext context) => const VisaCenterScreen();
 }
 
 class EquivalencyScreen extends StatelessWidget {

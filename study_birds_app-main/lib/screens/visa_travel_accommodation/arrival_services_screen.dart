@@ -17,6 +17,19 @@ class ArrivalServicesScreen extends StatefulWidget {
 }
 
 class _ArrivalServicesScreenState extends State<ArrivalServicesScreen> {
+  static const _requestStatuses = {
+    'draft': 'مسودة',
+    'submitted': 'تم الإرسال',
+    'in-progress': 'قيد التنسيق',
+    'completed': 'مكتمل',
+  };
+  static const _pickupStatuses = {
+    'not-assigned': 'لم يُعيّن سائق بعد',
+    'assigned': 'تم تعيين السائق',
+    'en-route': 'السائق في الطريق',
+    'arrived': 'وصل السائق',
+    'completed': 'اكتمل الاستقبال',
+  };
   bool _loading = true;
   String? _loadError;
   Map<String, dynamic>? _existing;
@@ -111,10 +124,13 @@ class _ArrivalServicesScreenState extends State<ArrivalServicesScreen> {
       );
       if (!mounted) return;
       setState(() => _existing = updated);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم إرسال طلبك بنجاح'), backgroundColor: AppColors.success));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('تم إرسال طلبك بنجاح'),
+          backgroundColor: AppColors.success));
     } catch (e) {
       if (!mounted) return;
-      setState(() => _saveError = e is ApiException ? e.message : 'تعذر إرسال الطلب.');
+      setState(() =>
+          _saveError = e is ApiException ? e.message : 'تعذر إرسال الطلب.');
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -142,12 +158,34 @@ class _ArrivalServicesScreenState extends State<ArrivalServicesScreen> {
             AppCard(
               child: Row(
                 children: [
-                  const Icon(Icons.check_circle_outline_rounded, color: AppColors.success, size: 18),
+                  const Icon(Icons.check_circle_outline_rounded,
+                      color: AppColors.success, size: 18),
                   const SizedBox(width: 8),
-                  Expanded(child: Text('حالة الطلب: ${_existing!['status'] ?? 'submitted'}', style: AppTextStyles.body)),
+                  Expanded(
+                      child: Text(
+                          'حالة الطلب: ${_requestStatuses[_existing!['status']] ?? _existing!['status'] ?? 'تم الإرسال'}',
+                          style: AppTextStyles.body)),
                 ],
               ),
             ),
+            if ('${_existing!['travelAlert'] ?? ''}'.isNotEmpty)
+              AppCard(
+                child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.notifications_active_outlined,
+                          color: AppColors.warning),
+                      const SizedBox(width: 8),
+                      Expanded(
+                          child: Text('${_existing!['travelAlert']}',
+                              style: AppTextStyles.body)),
+                    ]),
+              ),
+            if (_existing!['services'] is Map &&
+                (_existing!['services'] as Map)['airportPickup'] == true)
+              _pickupCard(_existing!['pickup'] is Map
+                  ? _existing!['pickup'] as Map
+                  : const {}),
             const SizedBox(height: 8),
           ],
           const Text('معلومات الرحلة', style: AppTextStyles.sectionLabel),
@@ -161,7 +199,11 @@ class _ArrivalServicesScreenState extends State<ArrivalServicesScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text('تاريخ الوصول', style: AppTextStyles.caption),
-                      Text(_arrivalDate != null ? '${_arrivalDate!.year}-${_arrivalDate!.month}-${_arrivalDate!.day}' : 'اختر تاريخًا', style: AppTextStyles.body),
+                      Text(
+                          _arrivalDate != null
+                              ? '${_arrivalDate!.year}-${_arrivalDate!.month}-${_arrivalDate!.day}'
+                              : 'اختر تاريخًا',
+                          style: AppTextStyles.body),
                     ],
                   ),
                 ),
@@ -180,10 +222,16 @@ class _ArrivalServicesScreenState extends State<ArrivalServicesScreen> {
           AppCard(
             child: Column(
               children: [
-                _serviceSwitch('استقبال من المطار', _airportPickup, (v) => setState(() => _airportPickup = v)),
-                _serviceSwitch('سكن طلابي', _studentHousing, (v) => setState(() => _studentHousing = v)),
-                _serviceSwitch('دعم الإقامة (تصريح الإقامة)', _residencePermitSupport, (v) => setState(() => _residencePermitSupport = v)),
-                _serviceSwitch('دعم التأشيرة', _visaSupport, (v) => setState(() => _visaSupport = v)),
+                _serviceSwitch('استقبال من المطار', _airportPickup,
+                    (v) => setState(() => _airportPickup = v)),
+                _serviceSwitch('سكن طلابي', _studentHousing,
+                    (v) => setState(() => _studentHousing = v)),
+                _serviceSwitch(
+                    'دعم الإقامة (تصريح الإقامة)',
+                    _residencePermitSupport,
+                    (v) => setState(() => _residencePermitSupport = v)),
+                _serviceSwitch('دعم التأشيرة', _visaSupport,
+                    (v) => setState(() => _visaSupport = v)),
               ],
             ),
           ),
@@ -191,21 +239,64 @@ class _ArrivalServicesScreenState extends State<ArrivalServicesScreen> {
           const Text('ملاحظات إضافية', style: AppTextStyles.sectionLabel),
           const SizedBox(height: 10),
           Container(
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(AppRadius.button), border: Border.all(color: AppColors.border)),
-            child: TextField(controller: _notes, maxLines: 3, textAlign: TextAlign.right, decoration: const InputDecoration(border: InputBorder.none, contentPadding: EdgeInsets.all(12))),
+            decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(AppRadius.button),
+                border: Border.all(color: AppColors.border)),
+            child: TextField(
+                controller: _notes,
+                maxLines: 3,
+                textAlign: TextAlign.right,
+                decoration: const InputDecoration(
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.all(12))),
           ),
           if (_saveError != null) ...[
             const SizedBox(height: 10),
             Container(
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: AppColors.warning.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
-              child: Text(_saveError!, style: const TextStyle(color: AppColors.warning, fontSize: 12.5)),
+              decoration: BoxDecoration(
+                  color: AppColors.warning.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10)),
+              child: Text(_saveError!,
+                  style: const TextStyle(
+                      color: AppColors.warning, fontSize: 12.5)),
             ),
           ],
           const SizedBox(height: 20),
-          PrimaryButton(label: _saving ? 'جاري الإرسال...' : 'إرسال الطلب', onPressed: _saving ? null : _submit),
+          PrimaryButton(
+              label: _saving ? 'جاري الإرسال...' : 'إرسال الطلب',
+              onPressed: _saving ? null : _submit),
         ],
       ),
+    );
+  }
+
+  Widget _pickupCard(Map pickup) {
+    final state = '${pickup['status'] ?? 'not-assigned'}';
+    final driver = '${pickup['driverName'] ?? ''}'.trim();
+    final phone = '${pickup['driverPhone'] ?? ''}'.trim();
+    return AppCard(
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          const Icon(Icons.local_taxi_outlined, color: AppColors.navy),
+          const SizedBox(width: 8),
+          Expanded(
+              child: Text(_pickupStatuses[state] ?? state,
+                  style: AppTextStyles.cardTitle)),
+        ]),
+        if (driver.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Text('السائق: $driver', style: AppTextStyles.body),
+        ],
+        if (phone.isNotEmpty) Text('الهاتف: $phone', style: AppTextStyles.body),
+        if (state == 'not-assigned')
+          const Padding(
+            padding: EdgeInsets.only(top: 6),
+            child: Text('سيظهر اسم السائق ورقم التواصل بعد تعيينه.',
+                style: AppTextStyles.caption),
+          ),
+      ]),
     );
   }
 
@@ -216,17 +307,23 @@ class _ArrivalServicesScreenState extends State<ArrivalServicesScreen> {
         Text(label, style: AppTextStyles.caption),
         SizedBox(
           width: 180,
-          child: TextField(controller: controller, textAlign: TextAlign.right, decoration: const InputDecoration(border: InputBorder.none, isDense: true)),
+          child: TextField(
+              controller: controller,
+              textAlign: TextAlign.right,
+              decoration: const InputDecoration(
+                  border: InputBorder.none, isDense: true)),
         ),
       ],
     );
   }
 
-  Widget _serviceSwitch(String label, bool value, ValueChanged<bool> onChanged) {
+  Widget _serviceSwitch(
+      String label, bool value, ValueChanged<bool> onChanged) {
     return Row(
       children: [
         Expanded(child: Text(label, style: AppTextStyles.body)),
-        Switch(value: value, activeColor: AppColors.orange, onChanged: onChanged),
+        Switch(
+            value: value, activeColor: AppColors.orange, onChanged: onChanged),
       ],
     );
   }
