@@ -193,6 +193,7 @@ const createStudentInvoiceAdmin = asyncHandler(async (req, res) => {
     title: "New invoice created",
     message: `A new invoice (${invoiceNumber}) has been added to your account.`,
     type: "info",
+    link: "/student/payments",
   });
 
   res.status(201).json(await Invoice.findById(invoice._id).populate("student", "name email"));
@@ -222,6 +223,7 @@ const updateStudentInvoiceAdmin = asyncHandler(async (req, res) => {
     title: "Invoice updated",
     message: `Invoice ${invoice.invoiceNumber} is now marked as ${invoice.status}.`,
     type: invoice.status === "rejected" ? "warning" : "info",
+    link: "/student/payments",
   });
 
   res.json(await Invoice.findById(invoice._id).populate("student", "name email").populate("reviewedBy", "name email"));
@@ -259,6 +261,7 @@ const reviewPaymentProofAdmin = asyncHandler(async (req, res) => {
     title: "Payment proof reviewed",
     message: `Your payment proof has been ${nextStatus}.`,
     type: nextStatus === "rejected" ? "warning" : "success",
+    link: "/student/payments",
   });
 
   res.json(await PaymentProof.findById(proof._id).populate("student", "name email").populate("invoice", "invoiceNumber description amount status").populate("reviewedBy", "name email"));
@@ -305,6 +308,7 @@ const updateArrivalRequestAdmin = asyncHandler(async (req, res) => {
     title: "Arrival request updated",
     message: `Your arrival services request is now ${item.status}.`,
     type: "info",
+    link: "/student/arrival-services",
   });
 
   res.json(await ArrivalServiceRequest.findById(item._id).populate("student", "name email").populate("updatedBy", "name email"));

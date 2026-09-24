@@ -40,7 +40,7 @@ const updateAdmin = asyncHandler(async (req, res) => {
   if (!mongoose.isValidObjectId(req.params.id) || !STAFF_STATUSES.includes(status) || !Number.isInteger(version) || version < 0 || typeof staffNote !== 'string' || staffNote.length > 2000 || (quotedPrice !== null && (typeof quotedPrice !== 'number' || quotedPrice < 0)) || typeof currency !== 'string' || currency.length > 10) return res.status(400).json({ message: 'Invalid service order update' });
   const order = await ServiceOrder.findOneAndUpdate({ _id: req.params.id, __v: version, status: { $nin: ['completed', 'rejected', 'cancelled'] } }, { $set: { status, staffNote: staffNote.trim(), quotedPrice, currency: currency.trim() }, $inc: { __v: 1 }, $push: { history: { status, changedBy: req.user._id } } }, { new: true }).populate('student', 'name email').populate('service', 'title slug').lean();
   if (!order) return res.status(409).json({ message: 'Service order changed. Refresh and retry.' });
-  await Notification.create({ user: order.student._id, title: 'Service request updated', message: `Your service request is now ${status}.`, type: 'info' });
+  await Notification.create({ user: order.student._id, title: 'Service request updated', message: `Your service request is now ${status}.`, type: 'info', link: '/student/service-orders' });
   res.json(order);
 });
 
