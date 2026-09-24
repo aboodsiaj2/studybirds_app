@@ -7,6 +7,8 @@ import 'package:http/testing.dart';
 import 'package:study_birds/core/auth_session.dart';
 import 'package:study_birds/core/student_repository.dart';
 import 'package:study_birds/screens/visa_travel_accommodation/visa_travel_screens.dart';
+import 'package:study_birds/screens/visa_travel_accommodation/arrival_services_screen.dart';
+import 'package:study_birds/screens/visa_travel_accommodation/accommodation_arrival_screens.dart';
 
 http.Response reply(Object value, [int status = 200]) =>
     http.Response(jsonEncode(value), status,
@@ -76,6 +78,63 @@ void main() {
                   'policyNumber': 'P-1'
                 },
                 'notes': 'احتفظ بالأصل',
+              });
+            }));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('arrival services show the real pickup assignment',
+      (tester) async {
+    await http.runWithClient(() async {
+      await tester.pumpWidget(const MaterialApp(home: ArrivalServicesScreen()));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('قيد التنسيق'), findsOneWidget);
+      expect(find.text('تم تعيين السائق'), findsOneWidget);
+      expect(find.text('السائق: أحمد'), findsOneWidget);
+      expect(find.text('الهاتف: +905550001122'), findsOneWidget);
+      expect(find.text('تأكد من بوابة الوصول'), findsOneWidget);
+    },
+        () => MockClient((request) async => reply({
+              'status': 'in-progress',
+              'travelAlert': 'تأكد من بوابة الوصول',
+              'services': {'airportPickup': true},
+              'pickup': {
+                'status': 'assigned',
+                'driverName': 'أحمد',
+                'driverPhone': '+905550001122'
+              }
+            })));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('university registration uses the post-admission stage',
+      (tester) async {
+    await http.runWithClient(() async {
+      await tester
+          .pumpWidget(const MaterialApp(home: UniversityRegistrationScreen()));
+      await tester.pumpAndSettle();
+      expect(find.text('بانتظار الجامعة'), findsOneWidget);
+      expect(find.text('أحضر جواز السفر الأصلي'), findsOneWidget);
+      expect(find.text('مرجع المتابعة: REG-42'), findsOneWidget);
+    },
+        () => MockClient((request) async {
+              if (request.url.path == '/api/students/applications') {
+                return reply([
+                  {'_id': 'app-1'}
+                ]);
+              }
+              expect(
+                  request.url.path, '/api/applications/app-1/post-admission');
+              return reply({
+                'stages': [
+                  {
+                    'key': 'registration',
+                    'status': 'waiting-university',
+                    'descriptionAr': 'أحضر جواز السفر الأصلي',
+                    'reference': 'REG-42',
+                    'dueAt': '2027-01-15T00:00:00.000Z'
+                  }
+                ]
               });
             }));
     expect(tester.takeException(), isNull);

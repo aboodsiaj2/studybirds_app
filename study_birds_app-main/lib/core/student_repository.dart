@@ -192,6 +192,12 @@ class StudentRepository {
     return Map<String, dynamic>.from(data as Map);
   }
 
+  Future<Map<String, dynamic>> getPostAdmission(String applicationId) async {
+    final data = await ApiClient.instance
+        .get('/applications/$applicationId/post-admission', token: _token);
+    return Map<String, dynamic>.from(data as Map);
+  }
+
   Future<List<dynamic>> getAccommodationListings({
     String? universityId,
     String? type,

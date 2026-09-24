@@ -577,12 +577,17 @@ const upsertArrivalServiceRequest = asyncHandler(async (req, res) => {
       residencePermitSupport: Boolean(req.body.services?.residencePermitSupport),
       visaSupport: Boolean(req.body.services?.visaSupport),
     },
-    status: "submitted",
   };
 
-  const request = await ArrivalServiceRequest.findOneAndUpdate({ student: req.user._id }, payload, {
+  // Student edits must not move a request already coordinated by staff back
+  // to "submitted" or erase its pickup assignment.
+  const request = await ArrivalServiceRequest.findOneAndUpdate({ student: req.user._id }, {
+    $set: payload,
+    $setOnInsert: { status: "submitted" },
+  }, {
     new: true,
     upsert: true,
+    setDefaultsOnInsert: true,
   });
 
   await Notification.create({
