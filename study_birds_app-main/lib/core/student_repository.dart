@@ -186,6 +186,56 @@ class StudentRepository {
     return data as List<dynamic>;
   }
 
+  Future<Map<String, dynamic>> getVisaCase(String applicationId) async {
+    final data = await ApiClient.instance
+        .get('/applications/$applicationId/visa-case', token: _token);
+    return Map<String, dynamic>.from(data as Map);
+  }
+
+  Future<List<dynamic>> getAccommodationListings({
+    String? universityId,
+    String? type,
+  }) async {
+    final query = <String, String>{
+      if (universityId != null && universityId.isNotEmpty)
+        'university': universityId,
+      if (type != null && type.isNotEmpty) 'type': type,
+    };
+    final suffix = query.isEmpty ? '' : '?${Uri(queryParameters: query).query}';
+    final data = await ApiClient.instance
+        .get('/accommodation/listings$suffix', token: _token);
+    return data as List<dynamic>;
+  }
+
+  Future<List<dynamic>> getAccommodationBookings() async {
+    final data = await ApiClient.instance
+        .get('/accommodation/bookings/mine', token: _token);
+    return data as List<dynamic>;
+  }
+
+  Future<Map<String, dynamic>> createAccommodationBooking({
+    required String listingId,
+    DateTime? moveInDate,
+    String notes = '',
+  }) async {
+    final data = await ApiClient.instance
+        .post('/accommodation/bookings', token: _token, body: {
+      'listingId': listingId,
+      if (moveInDate != null) 'moveInDate': moveInDate.toIso8601String(),
+      'notes': notes,
+    });
+    return Map<String, dynamic>.from(data as Map);
+  }
+
+  Future<Map<String, dynamic>> cancelAccommodationBooking(
+      String bookingId, int version) async {
+    final data = await ApiClient.instance.post(
+        '/accommodation/bookings/$bookingId/cancel',
+        token: _token,
+        body: {'version': version});
+    return Map<String, dynamic>.from(data as Map);
+  }
+
   Future<List<dynamic>> getDocuments() async {
     final data =
         await ApiClient.instance.get('/students/documents', token: _token);
