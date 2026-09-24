@@ -433,6 +433,68 @@ class StudentRepository {
     return data as Map<String, dynamic>;
   }
 
+  // ---- Accommodation -------------------------------------------------------
+
+  Future<List<dynamic>> getAccommodationListings() async {
+    final data =
+        await ApiClient.instance.get('/accommodation/listings', token: _token);
+    return data as List<dynamic>;
+  }
+
+  Future<Map<String, dynamic>> bookAccommodation({
+    required String listingId,
+    String? moveInDate,
+    String notes = '',
+  }) async {
+    final data = await ApiClient.instance.post(
+      '/accommodation/bookings',
+      token: _token,
+      body: {
+        'listingId': listingId,
+        if (moveInDate != null) 'moveInDate': moveInDate,
+        if (notes.isNotEmpty) 'notes': notes,
+      },
+    );
+    return data as Map<String, dynamic>;
+  }
+
+  Future<List<dynamic>> getMyAccommodationBookings() async {
+    final data = await ApiClient.instance
+        .get('/accommodation/bookings/mine', token: _token);
+    return data as List<dynamic>;
+  }
+
+  Future<Map<String, dynamic>> cancelAccommodationBooking({
+    required String id,
+    required int version,
+  }) async {
+    final data = await ApiClient.instance.post(
+      '/accommodation/bookings/$id/cancel',
+      token: _token,
+      body: {'version': version},
+    );
+    return data as Map<String, dynamic>;
+  }
+
+  // ---- Push token ----------------------------------------------------------
+  // Call registerPushToken once after login with the FCM token obtained via
+  // firebase_messaging (add that package after google-services.json is set up).
+  // The server stores it in PushToken and sends push via firebase-admin.
+
+  Future<void> registerPushToken(
+      {required String token, required String platform}) async {
+    await ApiClient.instance.post(
+      '/push',
+      token: _token,
+      body: {'token': token, 'platform': platform},
+    );
+  }
+
+  Future<void> unregisterPushToken(String deviceToken) async {
+    await ApiClient.instance
+        .delete('/push?token=${Uri.encodeComponent(deviceToken)}', token: _token);
+  }
+
   // ---- Knowledge Base -------------------------------------------------------
 
   Future<List<dynamic>> getKnowledgeBase() async {
