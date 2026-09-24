@@ -20,7 +20,12 @@ class ApiClient {
   ApiClient._();
   static final ApiClient instance = ApiClient._();
 
-  static const String baseUrl = 'https://study-birds1.onrender.com/api';
+  /// Override for staging or production builds with:
+  /// `--dart-define=API_BASE_URL=https://your-api.example/api`.
+  static const String baseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'https://study-birds1.onrender.com/api',
+  );
 
   /// Supplied by AuthSession at call time so ApiClient itself has no
   /// circular dependency on the session — every authenticated call passes
