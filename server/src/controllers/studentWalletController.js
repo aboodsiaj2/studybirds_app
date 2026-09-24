@@ -3,6 +3,8 @@ const asyncHandler = require("../utils/asyncHandler");
 const StudentReferral = require("../models/StudentReferral");
 const StudentWalletEntry = require("../models/StudentWalletEntry");
 const Invoice = require("../models/Invoice");
+const User = require("../models/User");
+const { atomicOperation, fail } = require("../utils/atomicOperation");
 const { ensureReferralCode, getWalletBalance } = require("../utils/studentWallet");
 
 // ---- Student: their own wallet ------------------------------------------
@@ -26,22 +28,29 @@ const redeemWalletCredit = asyncHandler(async (req, res) => {
   if (!mongoose.isValidObjectId(invoiceId) || typeof amount !== "number" || !Number.isFinite(amount) || amount <= 0) {
     return res.status(400).json({ message: "Invalid redemption request" });
   }
-  const invoice = await Invoice.findOne({ _id: invoiceId, student: req.user._id });
-  if (!invoice) return res.status(404).json({ message: "Invoice not found" });
-  if (invoice.status !== "unpaid") return res.status(409).json({ message: "This invoice can no longer accept credit" });
+  const result = await atomicOperation(res, async session => {
+  // All debits write the same student first. Mongo retries competing transactions
+  // with a fresh snapshot before they may read and spend the balance.
+  const owner = await User.updateOne({ _id: req.user._id }, { $inc: { walletRevision: 1 } }, { session });
+  if (!owner.matchedCount) fail(404, "Student not found");
+  const invoice = await Invoice.findOne({ _id: invoiceId, student: req.user._id }).session(session);
+  if (!invoice) fail(404, "Invoice not found");
+  if (invoice.status !== "unpaid") fail(409, "This invoice can no longer accept credit");
   const remaining = invoice.amount - invoice.walletCreditApplied;
-  if (amount > remaining) return res.status(400).json({ message: "Amount exceeds what is still owed on this invoice" });
-  const balance = await getWalletBalance(req.user._id);
-  if (amount > balance) return res.status(409).json({ message: "Insufficient wallet balance" });
+  if (amount > remaining) fail(400, "Amount exceeds what is still owed on this invoice");
+  const balance = await getWalletBalance(req.user._id, session);
+  if (amount > balance) fail(409, "Insufficient wallet balance");
 
   const updated = await Invoice.findOneAndUpdate(
     { _id: invoice._id, status: "unpaid", walletCreditApplied: invoice.walletCreditApplied },
     { $inc: { walletCreditApplied: amount }, $set: amount >= remaining ? { status: "paid", reviewedAt: new Date() } : {} },
-    { new: true }
+    { new: true, session }
   );
-  if (!updated) return res.status(409).json({ message: "Invoice changed. Refresh and retry." });
-  await StudentWalletEntry.create({ student: req.user._id, direction: "debit", kind: "redemption", amount, relatedInvoice: invoice._id, notes: `سداد جزئي/كامل لفاتورة ${invoice.invoiceNumber}` });
-  res.json({ invoice: updated, balance: await getWalletBalance(req.user._id) });
+  if (!updated) fail(409, "Invoice changed. Refresh and retry.");
+  await StudentWalletEntry.create([{ student: req.user._id, direction: "debit", kind: "redemption", amount, relatedInvoice: invoice._id, notes: `سداد جزئي/كامل لفاتورة ${invoice.invoiceNumber}` }], { session });
+  return { invoice: updated, balance: await getWalletBalance(req.user._id, session) };
+  });
+  res.json(result);
 });
 
 // ---- Staff: manual adjustments (mounted under /admin/student-financials,
@@ -61,10 +70,15 @@ const createWalletAdjustmentAdmin = asyncHandler(async (req, res) => {
     || typeof notes !== "string" || !notes.trim() || notes.length > 500) {
     return res.status(400).json({ message: "Invalid wallet adjustment" });
   }
-  if (direction === "debit" && amount > (await getWalletBalance(studentId))) {
-    return res.status(409).json({ message: "Adjustment would leave a negative balance" });
-  }
-  const entry = await StudentWalletEntry.create({ student: studentId, direction, kind: "adjustment", amount, notes: notes.trim(), createdBy: req.user._id });
+  const entry = await atomicOperation(res, async session => {
+    const owner = await User.updateOne({ _id: studentId, role: 'student' }, { $inc: { walletRevision: 1 } }, { session });
+    if (!owner.matchedCount) fail(404, "Student not found");
+    if (direction === "debit" && amount > (await getWalletBalance(studentId, session))) {
+      fail(409, "Adjustment would leave a negative balance");
+    }
+    const [created] = await StudentWalletEntry.create([{ student: studentId, direction, kind: "adjustment", amount, notes: notes.trim(), createdBy: req.user._id }], { session });
+    return created;
+  });
   res.status(201).json(entry);
 });
 

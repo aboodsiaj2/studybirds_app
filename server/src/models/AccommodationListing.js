@@ -11,6 +11,7 @@ const accommodationListingSchema = new mongoose.Schema(
     currency: { type: String, default: "USD", trim: true },
     rules: { type: String, default: "", trim: true },
     capacity: { type: Number, required: true, min: 0 },
+    bookingRevision: { type: Number, default: 0, select: false },
     isActive: { type: Boolean, default: true },
   },
   { timestamps: true }

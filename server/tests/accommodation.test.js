@@ -3,11 +3,11 @@ const assert = require('node:assert/strict');
 const path = require('node:path');
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
-const { MongoMemoryServer } = require(path.join(process.env.STUDY_BIRDS_TEST_TOOLS, 'node_modules/mongodb-memory-server-core'));
+const { MongoMemoryReplSet } = require(path.join(process.env.STUDY_BIRDS_TEST_TOOLS, 'node_modules/mongodb-memory-server-core'));
 
 test('accommodation listings and bookings are staff-managed, scoped and versioned', async () => {
   process.env.JWT_SECRET = 'accommodation-isolated-test';
-  const mongo = await MongoMemoryServer.create({ instance: { ip: '127.0.0.1' } });
+  const mongo = await MongoMemoryReplSet.create({ replSet: { count: 1, storageEngine: 'wiredTiger' }, instanceOpts: [{ ip: '127.0.0.1' }] });
   let server;
   try {
     await mongoose.connect(mongo.getUri());

@@ -20,6 +20,9 @@ const userSchema = new mongoose.Schema(
     },
     appleId: { type: String, unique: true, sparse: true },
     referralCode: { type: String, unique: true, sparse: true },
+    // Shared write guards serialize balance spends and housing requests across workers.
+    walletRevision: { type: Number, default: 0, select: false },
+    housingRevision: { type: Number, default: 0, select: false },
     verifiedPhone: { type: String },
     googleId: {
       type: String,

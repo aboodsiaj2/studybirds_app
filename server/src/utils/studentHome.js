@@ -96,7 +96,7 @@ function homeContext({ applications, arrivals, nextAction, main }, now) {
   if (nextAction && DOCUMENT_ACTIONS.has(nextAction.code)) return 'documents';
   const arrival = [...arrivals].filter(item => valid(item.arrivalDate) && item.status !== 'draft')
     .sort((a, b) => new Date(b.arrivalDate) - new Date(a.arrivalDate))[0];
-  const arrived = arrival && (arrival.status === 'completed' || ['arrived', 'completed'].includes(arrival.pickup?.status) || new Date(arrival.arrivalDate) <= now);
+  const arrived = arrival && (arrival.status === 'completed' || ['arrived', 'completed'].includes(arrival.pickup?.status));
   const registration = main?.postAdmission?.registration?.status;
   if (arrived) return ['completed', 'not-required'].includes(registration) ? 'settled' : 'registration';
   if (arrival && daysUntil(arrival.arrivalDate, now) <= DEPARTURE_WINDOW_DAYS) return 'departure';
