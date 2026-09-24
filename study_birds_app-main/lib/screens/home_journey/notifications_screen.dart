@@ -2,6 +2,45 @@ import 'package:flutter/material.dart';
 import '../../core/app_theme.dart';
 import '../../core/student_repository.dart';
 import '../services_support/services_consultation_screens.dart';
+import '../services_support/community_screen.dart';
+import '../applications_documents_payments/applications_screens.dart';
+import '../applications_documents_payments/documents_screens.dart';
+import '../applications_documents_payments/payments_screens.dart';
+import '../profile_account/student_wallet_screen.dart';
+import '../visa_travel_accommodation/arrival_services_screen.dart';
+import '../visa_travel_accommodation/accommodation_arrival_screens.dart';
+import '../visa_travel_accommodation/visa_travel_screens.dart';
+
+Widget? notificationDestination(String? rawLink) {
+  if (rawLink == null || rawLink.trim().isEmpty) return null;
+  final uri = Uri.tryParse(rawLink.trim());
+  var path = uri?.path ?? rawLink.trim();
+  if (uri?.scheme == 'studybirds' && uri!.host.isNotEmpty) {
+    path = '/${uri.host}${uri.path}';
+  }
+  if (path.startsWith('/applications/')) return const ApplicationsListScreen();
+  return switch (path.replaceAll(RegExp(r'/+$'), '')) {
+    '/student/applications' ||
+    '/applications' =>
+      const ApplicationsListScreen(),
+    '/student/documents' || '/documents' => const MyDocumentsScreen(),
+    '/student/payments' || '/payments' => const PaymentsSummaryScreen(),
+    '/student/wallet' || '/wallet' => const StudentWalletScreen(),
+    '/student/consultations' ||
+    '/consultations' =>
+      const ConsultationBookingScreen(),
+    '/student/community' || '/community' => const StudentCommunityScreen(),
+    '/student/service-orders' ||
+    '/service-orders' =>
+      const ServiceOrdersScreen(),
+    '/student/arrival-services' ||
+    '/arrival-services' =>
+      const ArrivalServicesScreen(),
+    '/student/accommodation' || '/accommodation' => const AccommodationScreen(),
+    '/student/visa' || '/visa' => const VisaCenterScreen(),
+    _ => null,
+  };
+}
 
 IconData _notificationIcon(String? type) {
   switch (type) {
@@ -118,16 +157,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         final color = _notificationColor(n['type'] as String?);
                         final createdAt =
                             (n['createdAt'] as String?)?.split('T').first ?? '';
+                        final destination =
+                            notificationDestination(n['link'] as String?);
 
                         return AppCard(
                           onTap: () async {
                             await _markRead(n, i);
-                            if (context.mounted &&
-                                n['link'] == '/student/consultations') {
+                            if (context.mounted && destination != null) {
                               await Navigator.of(context).push(
                                   MaterialPageRoute(
-                                      builder: (_) =>
-                                          const ConsultationBookingScreen()));
+                                      builder: (_) => destination));
                             }
                           },
                           child: Row(
@@ -147,7 +186,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                 width: 38,
                                 height: 38,
                                 decoration: BoxDecoration(
-                                    color: color.withOpacity(0.12),
+                                    color: color.withValues(alpha: 0.12),
                                     shape: BoxShape.circle),
                                 child: Icon(
                                     _notificationIcon(n['type'] as String?),
@@ -173,6 +212,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                   ],
                                 ),
                               ),
+                              if (destination != null)
+                                const Icon(Icons.arrow_back_ios_new_rounded,
+                                    size: 14, color: AppColors.textSecondary),
                             ],
                           ),
                         );

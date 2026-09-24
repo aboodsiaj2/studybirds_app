@@ -567,6 +567,7 @@ const uploadPaymentProof = asyncHandler(async (req, res) => {
     title: "Payment proof uploaded",
     message: `Your payment proof for invoice ${invoice.invoiceNumber} is pending review.`,
     type: "info",
+    link: "/student/payments",
   });
 
   const response = proof.toObject();
@@ -618,6 +619,7 @@ const upsertArrivalServiceRequest = asyncHandler(async (req, res) => {
     title: "Arrival services updated",
     message: "Your arrival and services request has been submitted for coordination.",
     type: "info",
+    link: "/student/arrival-services",
   });
 
   res.json(request);
