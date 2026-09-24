@@ -153,6 +153,27 @@ void main() {
     expect(saved!.containsKey('user'), false);
   });
 
+  test('profile sends guardian, emergency, preferences and budget fields',
+      () async {
+    Map<String, dynamic>? saved;
+    await http.runWithClient(
+        () => StudentRepository.instance.updateProfile({
+              'guardianContact': {'name': 'أحمد', 'phone': '+90555'},
+              'emergencyContact': {'name': 'سارة', 'phone': '+96279'},
+              'preferredFields': ['الطب', 'الهندسة'],
+              'preferredDegreeLevel': 'bachelor',
+              'studyBudget': {'min': 5000, 'max': 10000, 'currency': 'USD'},
+            }),
+        () => MockClient((request) async {
+              saved = Map<String, dynamic>.from(jsonDecode(request.body));
+              return response({});
+            }));
+    expect(saved!['guardianContact']['name'], 'أحمد');
+    expect(saved!['emergencyContact']['phone'], '+96279');
+    expect(saved!['preferredFields'], ['الطب', 'الهندسة']);
+    expect(saved!['studyBudget']['max'], 10000);
+  });
+
   testWidgets(
       'profile editor saves entered values and preserves fields not edited',
       (tester) async {

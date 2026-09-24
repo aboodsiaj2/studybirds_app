@@ -10,11 +10,7 @@ import 'edit_profile_screen.dart';
 import 'student_wallet_screen.dart';
 
 /// Real Profile screen — fetches GET /api/students/profile. Sections shown
-/// match the ACTUAL StudentProfile schema on the backend; the previous
-/// "Parent Information" / "Emergency Contact" / "Financial Preferences"
-/// sections were removed because those fields don't exist on the backend
-/// yet (spec-vs-reality gap) — adding them back is a backend change, not a
-/// Flutter one.
+/// match the StudentProfile schema on the backend.
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -55,7 +51,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   String? _str(String key) {
-    final v = _profile?[key];
+    dynamic v = _profile;
+    for (final part in key.split('.')) {
+      v = v is Map ? v[part] : null;
+    }
     if (v == null) return null;
     final s = v.toString().trim();
     return s.isEmpty ? null : s;
@@ -115,6 +114,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
         'icon': Icons.tune_rounded,
         'value': _str('intake'),
         'complete': _str('intake') != null,
+      },
+      {
+        'label': 'بيانات ولي الأمر',
+        'icon': Icons.family_restroom_outlined,
+        'value': [_str('guardianContact.name'), _str('guardianContact.phone')]
+            .where((e) => e != null)
+            .join(' • '),
+        'complete': _str('guardianContact.name') != null &&
+            _str('guardianContact.phone') != null,
+      },
+      {
+        'label': 'جهة اتصال الطوارئ',
+        'icon': Icons.emergency_outlined,
+        'value': [_str('emergencyContact.name'), _str('emergencyContact.phone')]
+            .where((e) => e != null)
+            .join(' • '),
+        'complete': _str('emergencyContact.name') != null &&
+            _str('emergencyContact.phone') != null,
       },
     ];
 

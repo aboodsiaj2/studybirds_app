@@ -172,7 +172,12 @@ class StudentRepository {
       'targetCountries',
       'intake',
       'bio',
-      'address'
+      'address',
+      'guardianContact',
+      'emergencyContact',
+      'preferredFields',
+      'preferredDegreeLevel',
+      'studyBudget',
     ];
     await ApiClient.instance.put('/students/profile', token: _token, body: {
       for (final field in fields)

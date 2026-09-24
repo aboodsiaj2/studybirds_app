@@ -108,6 +108,11 @@ const updateProfile = asyncHandler(async (req, res) => {
     intake,
     bio,
     address,
+      guardianContact,
+      emergencyContact,
+      preferredFields,
+      preferredDegreeLevel,
+      studyBudget,
     applicationStage,
   } = req.body;
 
@@ -149,6 +154,24 @@ const updateProfile = asyncHandler(async (req, res) => {
     intake,
     bio,
     address,
+      guardianContact: {
+        name: String(guardianContact?.name || "").trim(),
+        relationship: String(guardianContact?.relationship || "").trim(),
+        phone: String(guardianContact?.phone || "").trim(),
+        email: String(guardianContact?.email || "").trim().toLowerCase(),
+      },
+      emergencyContact: {
+        name: String(emergencyContact?.name || "").trim(),
+        relationship: String(emergencyContact?.relationship || "").trim(),
+        phone: String(emergencyContact?.phone || "").trim(),
+      },
+      preferredFields: Array.isArray(preferredFields) ? preferredFields.map(value => String(value).trim()).filter(Boolean).slice(0, 20) : [],
+      preferredDegreeLevel: String(preferredDegreeLevel || "").trim(),
+      studyBudget: {
+        min: Number.isFinite(studyBudget?.min) && studyBudget.min >= 0 ? studyBudget.min : null,
+        max: Number.isFinite(studyBudget?.max) && studyBudget.max >= 0 ? studyBudget.max : null,
+        currency: String(studyBudget?.currency || "USD").trim().toUpperCase().slice(0, 10),
+      },
   };
 
   if (typeof applicationStage === "string" && applicationStage.trim()) {
@@ -158,7 +181,7 @@ const updateProfile = asyncHandler(async (req, res) => {
   const profile = await StudentProfile.findOneAndUpdate(
     { user: req.user._id },
     profilePayload,
-    { new: true, upsert: true }
+      { new: true, upsert: true, runValidators: true }
   ).populate("user", "-password");
 
   res.json(profile);
