@@ -24,6 +24,13 @@ class _ServicesCenterScreenState extends State<ServicesCenterScreen> {
   @override
   Widget build(BuildContext context) => AppScaffold(
         title: 'مركز الخدمات',
+        actions: [
+          IconButton(
+              tooltip: 'طلباتي',
+              onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                  builder: (_) => const ServiceOrdersScreen())),
+              icon: const Icon(Icons.receipt_long_outlined))
+        ],
         body: FutureBuilder<List<dynamic>>(
           future: future,
           builder: (context, snapshot) {
@@ -167,27 +174,30 @@ class ServiceDetailScreen extends StatefulWidget {
 
 class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
   bool _submitting = false;
+  final _notes = TextEditingController();
+
+  @override
+  void dispose() {
+    _notes.dispose();
+    super.dispose();
+  }
 
   Future<void> _requestService() async {
     final confirmed = await showAppConfirmDialog(
       context,
       title: 'تأكيد طلب الخدمة',
       message:
-          'سيتم إرسال طلبك لفريق الدعم للمتابعة معك، والدفع لاحقًا حسب توجيهاتهم. متابعة؟',
+          'سيُنشأ طلب خدمة مستقل ويمكنك متابعة حالته وسعره من قسم طلباتي. متابعة؟',
     );
     if (confirmed != true || !mounted) return;
 
     setState(() => _submitting = true);
     try {
-      await StudentRepository.instance.createSupportTicket(
-        subject: 'طلب خدمة: ${widget.service['name']}',
-        message:
-            'أرغب في طلب خدمة "${widget.service['name']}" (${widget.service['price']}). برجاء التواصل معي لمتابعة التفاصيل.',
-        category: 'other',
-      );
+      await StudentRepository.instance.createServiceOrder(
+          serviceId: '${widget.service['_id']}', notes: _notes.text.trim());
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('تم إرسال طلبك، سيتواصل معك فريق الدعم قريبًا'),
+          content: Text('تم إنشاء طلب الخدمة ويمكنك متابعته من طلباتي'),
           backgroundColor: AppColors.success));
       Navigator.of(context).pop();
     } catch (e) {
@@ -229,9 +239,16 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
             ),
             const SizedBox(height: 8),
             const Text(
-              'هذه الخدمة تُطلب عبر فريق الدعم — بعد الإرسال هيتواصل معاك فريق Study Birds لتفاصيل الدفع والمتابعة.',
+              'بعد الإرسال سيحدد الفريق السعر والخطوات المطلوبة، وستظهر جميع التحديثات في طلباتي.',
               style: AppTextStyles.caption,
             ),
+            const SizedBox(height: 14),
+            TextField(
+                controller: _notes,
+                maxLines: 3,
+                maxLength: 1000,
+                decoration: const InputDecoration(
+                    labelText: 'تفاصيل أو ملاحظات للطلب (اختياري)')),
             const SizedBox(height: 20),
             PrimaryButton(
               label: _submitting ? 'جاري الإرسال...' : 'طلب الخدمة',
@@ -242,6 +259,137 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
       ),
     );
   }
+}
+
+class ServiceOrdersScreen extends StatefulWidget {
+  const ServiceOrdersScreen({super.key});
+  @override
+  State<ServiceOrdersScreen> createState() => _ServiceOrdersScreenState();
+}
+
+class _ServiceOrdersScreenState extends State<ServiceOrdersScreen> {
+  bool loading = true, changing = false;
+  String? error;
+  List<Map<String, dynamic>> orders = [];
+  static const labels = {
+    'submitted': 'تم الإرسال',
+    'in-progress': 'قيد التنفيذ',
+    'awaiting-payment': 'بانتظار الدفع',
+    'completed': 'مكتمل',
+    'rejected': 'مرفوض',
+    'cancelled': 'ملغي'
+  };
+  @override
+  void initState() {
+    super.initState();
+    load();
+  }
+
+  Future<void> load() async {
+    setState(() {
+      loading = true;
+      error = null;
+    });
+    try {
+      orders = (await StudentRepository.instance.getServiceOrders())
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
+    } catch (e) {
+      error = e is ApiException ? e.message : 'تعذر تحميل طلبات الخدمات.';
+    }
+    if (mounted) setState(() => loading = false);
+  }
+
+  Future<void> cancel(Map<String, dynamic> order) async {
+    final yes = await showAppConfirmDialog(context,
+        title: 'إلغاء طلب الخدمة', message: 'هل تريد إلغاء هذا الطلب؟');
+    if (yes != true || !mounted) return;
+    setState(() => changing = true);
+    try {
+      await StudentRepository.instance
+          .cancelServiceOrder('${order['_id']}', order['__v'] as int? ?? 0);
+      await load();
+    } catch (e) {
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(e is ApiException ? e.message : 'تعذر إلغاء الطلب')));
+    }
+    if (mounted) setState(() => changing = false);
+  }
+
+  Color color(String s) => s == 'completed'
+      ? AppColors.success
+      : s == 'rejected'
+          ? AppColors.danger
+          : s == 'cancelled'
+              ? AppColors.neutral
+              : AppColors.warning;
+  @override
+  Widget build(BuildContext context) => AppScaffold(
+      title: 'طلبات الخدمات',
+      actions: [
+        IconButton(
+            onPressed: loading ? null : load, icon: const Icon(Icons.refresh))
+      ],
+      body: loading
+          ? const LoadingState(message: 'جارٍ تحميل الطلبات...')
+          : error != null
+              ? ErrorState(message: error!, onRetry: load)
+              : orders.isEmpty
+                  ? const EmptyState(
+                      icon: Icons.receipt_long_outlined,
+                      title: 'لا توجد طلبات خدمات',
+                      message: 'اختر خدمة من مركز الخدمات وأنشئ طلبك.')
+                  : ListView(
+                      padding: const EdgeInsets.all(16),
+                      children: orders.map((o) {
+                        final service = o['service'] is Map
+                            ? o['service'] as Map
+                            : const {};
+                        final state = '${o['status']}';
+                        final active = [
+                          'submitted',
+                          'in-progress',
+                          'awaiting-payment'
+                        ].contains(state);
+                        return AppCard(
+                            child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                              Row(children: [
+                                Expanded(
+                                    child: Text('${service['title'] ?? 'خدمة'}',
+                                        style: AppTextStyles.cardTitle)),
+                                StatusBadge(
+                                    label: labels[state] ?? state,
+                                    color: color(state))
+                              ]),
+                              if ('${o['staffNote'] ?? ''}'.isNotEmpty) ...[
+                                const SizedBox(height: 8),
+                                Text('${o['staffNote']}',
+                                    style: AppTextStyles.body)
+                              ],
+                              if (o['quotedPrice'] != null) ...[
+                                const SizedBox(height: 8),
+                                Text(
+                                    'السعر: ${o['quotedPrice']} ${o['currency'] ?? ''}',
+                                    style: AppTextStyles.sectionLabel)
+                              ],
+                              if ('${o['notes'] ?? ''}'.isNotEmpty) ...[
+                                const SizedBox(height: 8),
+                                Text('ملاحظاتك: ${o['notes']}',
+                                    style: AppTextStyles.caption)
+                              ],
+                              if (active)
+                                Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: TextButton(
+                                        onPressed:
+                                            changing ? null : () => cancel(o),
+                                        child: const Text('إلغاء الطلب'))),
+                            ]));
+                      }).toList()));
 }
 
 class _Row extends StatelessWidget {

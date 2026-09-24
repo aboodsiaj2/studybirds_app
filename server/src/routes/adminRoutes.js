@@ -111,6 +111,7 @@ const {
   getAccommodationBookingsAdmin, updateAccommodationBookingStatus,
 } = require("../controllers/accommodationController");
 const { getWalletEntriesAdmin, createWalletAdjustmentAdmin } = require("../controllers/studentWalletController");
+const { listAdmin: getServiceOrdersAdmin, updateAdmin: updateServiceOrderAdmin } = require('../controllers/serviceOrderController');
 const {
   listPostsAdmin, getPostAdmin, listReportsAdmin, listModerationLogAdmin, moderatePost, moderateComment,
   listSuspensionsAdmin, suspendUser, liftSuspension, getSettingsAdmin, updateSettingsAdmin,
@@ -163,6 +164,8 @@ router.post("/our-services/upload-image", upload.single("file"), uploadOurServic
 router.post("/our-services", createOurService);
 router.put("/our-services/:id", updateOurService);
 router.delete("/our-services/:id", deleteOurService);
+router.get('/service-orders', getServiceOrdersAdmin);
+router.patch('/service-orders/:id', updateServiceOrderAdmin);
 router.get("/our-story", getOurStoryAdmin);
 router.put("/our-story", upsertOurStory);
 router.post("/our-story/upload-image", upload.single("file"), uploadOurStoryImage);
