@@ -1,0 +1,6 @@
+# Copy this file to key.properties and replace every value locally.
+# Never commit key.properties or the keystore.
+storePassword=replace-with-store-password
+keyPassword=replace-with-key-password
+keyAlias=studybirds
+storeFile=../studybirds-release.jks
