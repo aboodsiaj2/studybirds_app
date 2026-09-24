@@ -64,7 +64,12 @@ class DashboardOverview {
   final List<dynamic> recentApplications;
   final List<dynamic> recentDocuments;
 
+  /// Context-aware home payload (server utils/studentHome.js); null on older
+  /// servers, in which case the home screen keeps its previous layout.
+  final Map<String, dynamic>? home;
+
   const DashboardOverview({
+    this.home,
     this.nextAction,
     this.journeys,
     required this.profile,
@@ -85,6 +90,9 @@ class DashboardOverview {
     final progress = json['progress'] as Map<String, dynamic>? ?? {};
     final statsJson = json['stats'] as Map<String, dynamic>? ?? {};
     return DashboardOverview(
+      home: json['home'] is Map
+          ? Map<String, dynamic>.from(json['home'] as Map)
+          : null,
       journeys: (json['journeys'] as List<dynamic>?)
           ?.map((e) => Map<String, dynamic>.from(e as Map))
           .toList(),
@@ -190,12 +198,19 @@ class StudentRepository {
     required List<int> fileBytes,
     required String fileName,
     required String type,
+    // A new version of an existing document, or a certified translation of one.
+    String? replaces,
+    String? translationOf,
   }) async {
     final data = await ApiClient.instance.postMultipart(
       '/students/documents',
       fileBytes: fileBytes,
       fileName: fileName,
-      fields: {'type': type},
+      fields: {
+        if (type.isNotEmpty) 'type': type,
+        if (replaces != null) 'replaces': replaces,
+        if (translationOf != null) 'translationOf': translationOf,
+      },
       token: _token,
     );
     return data as Map<String, dynamic>;
@@ -210,6 +225,24 @@ class StudentRepository {
   Future<void> markNotificationRead(String id) async {
     await ApiClient.instance
         .patch('/students/notifications/$id/read', token: _token);
+  }
+
+  /// GET /api/students/wallet — the student's own referral code (generated
+  /// on first read), balance, referrals and last 100 ledger entries.
+  Future<Map<String, dynamic>> getWallet() async {
+    final data =
+        await ApiClient.instance.get('/students/wallet', token: _token);
+    return Map<String, dynamic>.from(data as Map);
+  }
+
+  /// POST /api/students/wallet/redeem — spends wallet credit on one of the
+  /// student's unpaid invoices (the server checks balance and invoice
+  /// atomically). Returns {invoice, balance}.
+  Future<Map<String, dynamic>> redeemWalletCredit(
+      {required String invoiceId, required num amount}) async {
+    final data = await ApiClient.instance.post('/students/wallet/redeem',
+        token: _token, body: {'invoiceId': invoiceId, 'amount': amount});
+    return Map<String, dynamic>.from(data as Map);
   }
 
   Future<Map<String, dynamic>> getFinancials() async {
