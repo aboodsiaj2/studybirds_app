@@ -7,6 +7,7 @@ import '../../core/auth_session.dart';
 import '../../core/student_repository.dart';
 import 'security_settings_screen.dart';
 import 'edit_profile_screen.dart';
+import 'student_wallet_screen.dart';
 
 /// Real Profile screen — fetches GET /api/students/profile. Sections shown
 /// match the ACTUAL StudentProfile schema on the backend; the previous
@@ -238,13 +239,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
         AppCard(
           onTap: () => Navigator.of(context)
               .push(MaterialPageRoute(builder: (_) => const MyWalletScreen())),
-          child: Row(children: const [
-            Icon(Icons.account_balance_wallet_outlined, color: AppColors.navy),
-            SizedBox(width: 12),
+          child: Row(children: [
+            const Icon(Icons.account_balance_wallet_outlined,
+                color: AppColors.navy),
+            const SizedBox(width: 12),
             Expanded(
-                child: Text('الفواتير والمدفوعات',
+                child: Text(
+                    AuthSession.instance.currentUser?.role == UserRole.student
+                        ? 'المحفظة والفواتير'
+                        : 'الفواتير والمدفوعات',
                     style: AppTextStyles.cardTitle)),
-            Icon(Icons.arrow_back_ios_new_rounded,
+            const Icon(Icons.arrow_back_ios_new_rounded,
                 size: 14, color: AppColors.textSecondary)
           ]),
         ),
@@ -366,8 +371,14 @@ class ReferralProgramScreen extends StatefulWidget {
 }
 
 class _ReferralProgramScreenState extends State<ReferralProgramScreen> {
-  late Future<Map<String, dynamic>?> future =
-      StudentRepository.instance.getProfile();
+  // A student's referral code lives on the account and is created on first
+  // read of GET /students/wallet; StudentProfile.referralCode is the agent
+  // (partner) code. Reading the profile left students with no code.
+  static Future<Map<String, dynamic>?> _load() =>
+      AuthSession.instance.currentUser?.role == UserRole.student
+          ? StudentRepository.instance.getWallet()
+          : StudentRepository.instance.getProfile();
+  late Future<Map<String, dynamic>?> future = _load();
   @override
   Widget build(BuildContext context) => AppScaffold(
       title: 'رمز الإحالة',
@@ -379,8 +390,7 @@ class _ReferralProgramScreenState extends State<ReferralProgramScreen> {
             if (snapshot.hasError)
               return ErrorState(
                   message: 'تعذر تحميل رمز الإحالة',
-                  onRetry: () => setState(
-                      () => future = StudentRepository.instance.getProfile()));
+                  onRetry: () => setState(() => future = _load()));
             final code =
                 snapshot.data?['referralCode']?.toString().trim() ?? '';
             if (code.isEmpty)
@@ -405,10 +415,15 @@ class _ReferralProgramScreenState extends State<ReferralProgramScreen> {
           }));
 }
 
+/// Students get the real wallet (balance, referrals, paying invoices from
+/// credit); other roles keep the invoices summary they had before.
 class MyWalletScreen extends StatelessWidget {
   const MyWalletScreen({super.key});
   @override
-  Widget build(BuildContext context) => const PaymentsSummaryScreen();
+  Widget build(BuildContext context) =>
+      AuthSession.instance.currentUser?.role == UserRole.student
+          ? const StudentWalletScreen()
+          : const PaymentsSummaryScreen();
 }
 
 class FavoritesScreen extends StatefulWidget {
