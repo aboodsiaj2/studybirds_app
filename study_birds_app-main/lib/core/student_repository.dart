@@ -491,8 +491,11 @@ class StudentRepository {
   }
 
   Future<void> unregisterPushToken(String deviceToken) async {
-    await ApiClient.instance
-        .delete('/push?token=${Uri.encodeComponent(deviceToken)}', token: _token);
+    await ApiClient.instance.delete(
+      '/push',
+      token: _token,
+      body: {'token': deviceToken},
+    );
   }
 
   // ---- Knowledge Base -------------------------------------------------------
