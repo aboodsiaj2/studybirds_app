@@ -37,11 +37,13 @@ class ApiClient {
       };
 
   Future<dynamic> get(String path, {String? token}) async {
-    final response = await http.get(Uri.parse('$baseUrl$path'), headers: _headers(token));
+    final response =
+        await http.get(Uri.parse('$baseUrl$path'), headers: _headers(token));
     return _decode(response);
   }
 
-  Future<dynamic> post(String path, {Map<String, dynamic>? body, String? token}) async {
+  Future<dynamic> post(String path,
+      {Map<String, dynamic>? body, String? token}) async {
     final response = await http.post(
       Uri.parse('$baseUrl$path'),
       headers: _headers(token),
@@ -50,7 +52,8 @@ class ApiClient {
     return _decode(response);
   }
 
-  Future<dynamic> patch(String path, {Map<String, dynamic>? body, String? token}) async {
+  Future<dynamic> patch(String path,
+      {Map<String, dynamic>? body, String? token}) async {
     final response = await http.patch(
       Uri.parse('$baseUrl$path'),
       headers: _headers(token),
@@ -59,7 +62,8 @@ class ApiClient {
     return _decode(response);
   }
 
-  Future<dynamic> put(String path, {Map<String, dynamic>? body, String? token}) async {
+  Future<dynamic> put(String path,
+      {Map<String, dynamic>? body, String? token}) async {
     final response = await http.put(
       Uri.parse('$baseUrl$path'),
       headers: _headers(token),
@@ -68,8 +72,10 @@ class ApiClient {
     return _decode(response);
   }
 
-  Future<dynamic> delete(String path, {String? token}) async {
-    final response = await http.delete(Uri.parse('$baseUrl$path'), headers: _headers(token));
+  Future<dynamic> delete(String path,
+      {Map<String, dynamic>? body, String? token}) async {
+    final response = await http.delete(Uri.parse('$baseUrl$path'),
+        headers: _headers(token), body: body == null ? null : jsonEncode(body));
     return _decode(response);
   }
 
@@ -83,20 +89,37 @@ class ApiClient {
   static MediaType _mimeTypeFor(String fileName) {
     final ext = fileName.split('.').last.toLowerCase();
     switch (ext) {
-      case 'pdf': return MediaType('application', 'pdf');
-      case 'doc': return MediaType('application', 'msword');
-      case 'docx': return MediaType('application', 'vnd.openxmlformats-officedocument.wordprocessingml.document');
-      case 'xls': return MediaType('application', 'vnd.ms-excel');
-      case 'xlsx': return MediaType('application', 'vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-      case 'ppt': return MediaType('application', 'vnd.ms-powerpoint');
-      case 'pptx': return MediaType('application', 'vnd.openxmlformats-officedocument.presentationml.presentation');
-      case 'txt': return MediaType('text', 'plain');
-      case 'zip': return MediaType('application', 'zip');
+      case 'pdf':
+        return MediaType('application', 'pdf');
+      case 'doc':
+        return MediaType('application', 'msword');
+      case 'docx':
+        return MediaType('application',
+            'vnd.openxmlformats-officedocument.wordprocessingml.document');
+      case 'xls':
+        return MediaType('application', 'vnd.ms-excel');
+      case 'xlsx':
+        return MediaType('application',
+            'vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      case 'ppt':
+        return MediaType('application', 'vnd.ms-powerpoint');
+      case 'pptx':
+        return MediaType('application',
+            'vnd.openxmlformats-officedocument.presentationml.presentation');
+      case 'txt':
+        return MediaType('text', 'plain');
+      case 'zip':
+        return MediaType('application', 'zip');
       case 'jpg':
-      case 'jpeg': return MediaType('image', 'jpeg');
-      case 'png': return MediaType('image', 'png');
-      case 'webp': return MediaType('image', 'webp');
-      default: return MediaType('application', 'octet-stream'); // will still be rejected — matches an unsupported type on purpose
+      case 'jpeg':
+        return MediaType('image', 'jpeg');
+      case 'png':
+        return MediaType('image', 'png');
+      case 'webp':
+        return MediaType('image', 'webp');
+      default:
+        return MediaType('application',
+            'octet-stream'); // will still be rejected — matches an unsupported type on purpose
     }
   }
 
@@ -114,7 +137,8 @@ class ApiClient {
     final request = http.MultipartRequest('POST', Uri.parse('$baseUrl$path'));
     if (token != null) request.headers['Authorization'] = 'Bearer $token';
     if (fields != null) request.fields.addAll(fields);
-    request.files.add(http.MultipartFile.fromBytes(fileFieldName, fileBytes, filename: fileName, contentType: _mimeTypeFor(fileName)));
+    request.files.add(http.MultipartFile.fromBytes(fileFieldName, fileBytes,
+        filename: fileName, contentType: _mimeTypeFor(fileName)));
 
     final streamedResponse = await request.send();
     final response = await http.Response.fromStream(streamedResponse);
