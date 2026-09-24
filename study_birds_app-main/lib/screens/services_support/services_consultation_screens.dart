@@ -169,25 +169,46 @@ class _ServiceDetailScreenState extends State<ServiceDetailScreen> {
   bool _submitting = false;
 
   Future<void> _requestService() async {
-    final confirmed = await showAppConfirmDialog(
-      context,
-      title: 'تأكيد طلب الخدمة',
-      message:
-          'سيتم إرسال طلبك لفريق الدعم للمتابعة معك، والدفع لاحقًا حسب توجيهاتهم. متابعة؟',
+    final serviceId = widget.service['_id'] as String?;
+    if (serviceId == null) return;
+    final requestable = widget.service['requestable'];
+    if (requestable == false) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('هذه الخدمة لا تُطلب إلكترونيًا — تواصل مع الفريق مباشرة')));
+      return;
+    }
+
+    final notesCtrl = TextEditingController();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('تأكيد طلب الخدمة'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('أضف ملاحظات لفريق الدعم (اختياري)'),
+            const SizedBox(height: 12),
+            TextField(controller: notesCtrl, maxLines: 3,
+                decoration: const InputDecoration(hintText: 'ملاحظاتك...', border: OutlineInputBorder())),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('إرسال الطلب')),
+        ],
+      ),
     );
     if (confirmed != true || !mounted) return;
 
     setState(() => _submitting = true);
     try {
-      await StudentRepository.instance.createSupportTicket(
-        subject: 'طلب خدمة: ${widget.service['name']}',
-        message:
-            'أرغب في طلب خدمة "${widget.service['name']}" (${widget.service['price']}). برجاء التواصل معي لمتابعة التفاصيل.',
-        category: 'other',
+      await StudentRepository.instance.createServiceRequest(
+        serviceId: serviceId,
+        notes: notesCtrl.text.trim(),
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('تم إرسال طلبك، سيتواصل معك فريق الدعم قريبًا'),
+          content: Text('تم إرسال طلبك — تابعه في قسم "طلباتي"'),
           backgroundColor: AppColors.success));
       Navigator.of(context).pop();
     } catch (e) {

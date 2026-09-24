@@ -26,6 +26,7 @@ const List<EmployeeSection> kEmployeeSections = [
   EmployeeSection(key: 'site-settings', labelAr: 'بيانات التواصل وإعدادات الموقع', labelEn: 'Site settings'),
   EmployeeSection(key: 'recognitions', labelAr: 'الاعتمادات', labelEn: 'Recognitions'),
   EmployeeSection(key: 'services', labelAr: 'الخدمات', labelEn: 'Services'),
+  EmployeeSection(key: 'service-requests', labelAr: 'طلبات الخدمات', labelEn: 'Service requests'),
   EmployeeSection(key: 'faqs', labelAr: 'الأسئلة الشائعة', labelEn: 'FAQs'),
   EmployeeSection(key: 'agency-requests', labelAr: 'طلبات الوكالة', labelEn: 'Agency requests'),
   EmployeeSection(key: 'agents', labelAr: 'ملفات الوكلاء الكاملة', labelEn: 'Agent profiles (full records)'),

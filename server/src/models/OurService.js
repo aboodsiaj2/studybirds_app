@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const slugify = require("slugify");
+const { SERVICE_CATEGORIES } = require("../constants/serviceCatalog");
 
 const ourServiceSchema = new mongoose.Schema(
   {
@@ -45,6 +46,16 @@ const ourServiceSchema = new mongoose.Schema(
       ref: "Country",
       default: null,
     },
+    // Request details (PRD 35–36, 114). price null = set by staff after review.
+    category: { type: String, enum: SERVICE_CATEGORIES, default: "other" },
+    requestable: { type: Boolean, default: true },
+    price: { type: Number, min: 0, default: null },
+    currency: { type: String, trim: true, default: "USD" },
+    requirements: { type: [String], default: [] },
+    requiredDocuments: { type: [String], default: [] },
+    estimatedDuration: { type: String, trim: true, default: "" },
+    // Responsible staff member; new requests are assigned to them.
+    owner: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
   },
   { timestamps: true }
 );

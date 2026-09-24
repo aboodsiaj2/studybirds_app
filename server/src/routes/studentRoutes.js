@@ -24,6 +24,10 @@ const {
   submitOrientationTest,
 } = require("../controllers/studentController");
 const { getMyWallet, redeemWalletCredit } = require("../controllers/studentWalletController");
+const {
+  createServiceRequest, getMyServiceRequests, getMyServiceRequest,
+  cancelMyServiceRequest, respondToServiceRequest,
+} = require("../controllers/serviceRequestController");
 const { protect, authorize } = require("../middleware/authMiddleware");
 const upload = require("../middleware/uploadMiddleware");
 
@@ -55,5 +59,10 @@ router.get("/orientation-test", getOrientationTestResult);
 router.post("/orientation-test", submitOrientationTest);
 router.get("/wallet", getMyWallet);
 router.post("/wallet/redeem", redeemWalletCredit);
+router.get("/service-requests", getMyServiceRequests);
+router.post("/service-requests", createServiceRequest);
+router.get("/service-requests/:id", getMyServiceRequest);
+router.post("/service-requests/:id/cancel", cancelMyServiceRequest);
+router.post("/service-requests/:id/respond", respondToServiceRequest);
 
 module.exports = router;

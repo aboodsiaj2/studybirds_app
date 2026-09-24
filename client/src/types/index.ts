@@ -633,6 +633,15 @@ export interface OurService {
   sortOrder?: number;
   country?: Country | string | null;
   createdAt?: string;
+  // requestable fields (PRD 35-36, 114)
+  requestable?: boolean;
+  category?: string;
+  price?: number | null;
+  currency?: string;
+  requirements?: string[];
+  requiredDocuments?: string[];
+  estimatedDuration?: string;
+  owner?: string | null;
 }
 
 export interface OurStoryFounder {
@@ -911,6 +920,53 @@ export interface AdminPartnerDetails {
   verificationDocuments: VerificationDocumentItem[];
   walletEntries: AgentWalletEntry[];
   notifications: NotificationItem[];
+}
+
+export interface ServiceRequestStatusInfo {
+  status: string;
+  label: string;
+  meaning: string;
+  nextStep?: string;
+  type: "info" | "warning" | "success" | "error";
+}
+
+export interface ServiceRequestInvoice {
+  _id: string;
+  invoiceNumber: string;
+  description: string;
+  amount: number;
+  status: "unpaid" | "paid" | "rejected";
+  walletCreditApplied: number;
+  dueDate?: string | null;
+}
+
+export interface ServiceRequestHistory {
+  status: string;
+  note: string;
+  changedAt: string;
+}
+
+export interface ServiceRequestItem {
+  _id: string;
+  __v: number;
+  service: { _id: string; title: string; slug?: string; category?: string; price?: number | null; currency?: string };
+  notes: string;
+  status: string;
+  statusInfo: ServiceRequestStatusInfo;
+  reason: string;
+  staffNote: string;
+  studentReply: string;
+  assignedTo: { _id: string; name: string } | null;
+  invoice: ServiceRequestInvoice | null;
+  history: ServiceRequestHistory[];
+  createdAt: string;
+  updatedAt: string;
+  // student view
+  canCancel?: boolean;
+  canRespond?: boolean;
+  // staff view
+  student?: { _id: string; name: string; email: string } | null;
+  allowedStatuses?: string[];
 }
 
 export interface AdminStudentDetails {

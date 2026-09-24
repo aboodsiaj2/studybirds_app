@@ -20,6 +20,7 @@ import 'admin_financials_marketing_screens.dart';
 import 'admin_content_crud_screens.dart';
 import 'admin_singleton_hub_screens.dart';
 import 'employee_consultations_screen.dart';
+import 'admin_service_requests_screen.dart';
 
 /// Admin/Employee Home. HONESTY NOTE: the backend has no per-employee
 /// "tasks assigned to me" concept — role="admin" sees the whole platform
@@ -101,6 +102,8 @@ final List<_SectionEntry> _sectionScreens = [
       (_) => const AdminRecognitionsScreen()),
   _SectionEntry('services', Icons.design_services_outlined, 'الخدمات',
       (_) => const AdminServicesScreen()),
+  _SectionEntry('service-requests', Icons.assignment_outlined, 'طلبات الخدمات',
+      (_) => const AdminServiceRequestsScreen()),
   _SectionEntry('faqs', Icons.help_outline_rounded, 'الأسئلة الشائعة',
       (_) => const AdminFaqsScreen()),
   _SectionEntry('our-story', Icons.auto_stories_outlined, 'قصتنا',

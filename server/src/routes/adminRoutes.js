@@ -115,6 +115,10 @@ const {
   listPostsAdmin, getPostAdmin, listReportsAdmin, listModerationLogAdmin, moderatePost, moderateComment,
   listSuspensionsAdmin, suspendUser, liftSuspension, getSettingsAdmin, updateSettingsAdmin,
 } = require("../controllers/communityController");
+const {
+  getServiceRequestsAdmin, getServiceRequestAssignees,
+  updateServiceRequestStatus, assignServiceRequest,
+} = require("../controllers/serviceRequestController");
 const { protect, authorize } = require("../middleware/authMiddleware");
 const upload = require("../middleware/uploadMiddleware");
 
@@ -241,5 +245,9 @@ router.post("/university-accounts", createUniversityAccountAdmin);
 router.patch("/university-accounts/:id", updateUniversityAccountAdmin);
 router.get("/employees", getEmployeesAdmin);
 router.patch("/employees/:id/role", updateEmployeeRoleAdmin);
+router.get("/service-requests/assignees", getServiceRequestAssignees);
+router.get("/service-requests", getServiceRequestsAdmin);
+router.patch("/service-requests/:id", updateServiceRequestStatus);
+router.patch("/service-requests/:id/assign", assignServiceRequest);
 
 module.exports = router;

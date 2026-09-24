@@ -1,6 +1,7 @@
 import { api } from "../lib/api";
 import type {
   AdminOverview,
+  ServiceRequestItem,
   AdminPartnerDetails,
   AdminPartnerItem,
   AdminStudentDetails,
@@ -471,6 +472,28 @@ export const adminService = {
   },
   updateEmployeeRole: async (id: string, payload: { employeeRole?: EmployeeRole; permissions?: string[] }) => {
     const { data } = await api.patch<User>(`/admin/employees/${id}/role`, payload);
+    return data;
+  },
+  // service requests
+  getServiceRequests: async (params?: { status?: string; assigned?: string }) => {
+    const q = new URLSearchParams();
+    if (params?.status) q.set("status", params.status);
+    if (params?.assigned) q.set("assigned", params.assigned);
+    const { data } = await api.get<ServiceRequestItem[]>(`/admin/service-requests?${q}`);
+    return data;
+  },
+  getServiceRequestAssignees: async () => {
+    const { data } = await api.get<{ _id: string; name: string; email: string; role: string }[]>("/admin/service-requests/assignees");
+    return data;
+  },
+  updateServiceRequestStatus: async (id: string, payload: {
+    status: string; version: number; reason?: string; staffNote?: string; amount?: number; dueDate?: string;
+  }) => {
+    const { data } = await api.patch<ServiceRequestItem>(`/admin/service-requests/${id}`, payload);
+    return data;
+  },
+  assignServiceRequest: async (id: string, payload: { assignedTo: string | null; version: number }) => {
+    const { data } = await api.patch<ServiceRequestItem>(`/admin/service-requests/${id}/assign`, payload);
     return data;
   },
 };

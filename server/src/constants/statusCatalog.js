@@ -125,6 +125,50 @@ const DOCUMENT_STATUS_COPY = Object.freeze({
   },
 });
 
+// Service requests (PRD 35–36). Reasons written by staff are shown to the student.
+const SERVICE_REQUEST_STATUS_COPY = Object.freeze({
+  submitted: {
+    code: "SRV_01_SUBMITTED", tone: "info",
+    ar: { label: "تم استلام الطلب", meaning: "وصل طلبك وسيراجعه الفريق المسؤول عن الخدمة.", nextStep: "لا مطلوب منك شيء الآن. سنبلغك عند بدء المراجعة." },
+    en: { label: "Received", meaning: "We've received your request and the service team will review it.", nextStep: "Nothing is needed from you right now. We'll tell you when the review starts." },
+  },
+  "under-review": {
+    code: "SRV_02_UNDER_REVIEW", tone: "info",
+    ar: { label: "قيد المراجعة", meaning: "يراجع الفريق طلبك ومتطلباته.", nextStep: "لا مطلوب منك شيء الآن. سنبلغك بالنتيجة أو بأي معلومة ناقصة." },
+    en: { label: "Under review", meaning: "The team is reviewing your request and its requirements.", nextStep: "Nothing is needed from you right now. We'll tell you the outcome or anything missing." },
+  },
+  "action-required": {
+    code: "SRV_03_ACTION_REQUIRED", tone: "action",
+    ar: { label: "مطلوب إجراء منك", meaning: "يحتاج الفريق معلومة أو مستندًا منك لمتابعة الطلب.", reasonMeaning: "يحتاج الفريق منك: {reason}", nextStep: "أرسل ردك من صفحة الطلب، وارفع أي مستند مطلوب من قسم مستنداتي." },
+    en: { label: "Action needed", meaning: "The team needs information or a document from you to continue.", reasonMeaning: "The team needs: {reason}", nextStep: "Reply from the request page and upload any requested document in My Documents." },
+  },
+  "awaiting-payment": {
+    code: "SRV_04_AWAITING_PAYMENT", tone: "action",
+    ar: { label: "بانتظار الدفع", meaning: "صدرت فاتورة الخدمة، ويبدأ التنفيذ بعد سدادها.", nextStep: "ادفع الفاتورة من محفظتك أو ارفع إثبات الدفع من قسم المدفوعات." },
+    en: { label: "Awaiting payment", meaning: "The service invoice is issued; work starts once it's paid.", nextStep: "Pay the invoice from your wallet or upload a proof of payment in Payments." },
+  },
+  "in-progress": {
+    code: "SRV_05_IN_PROGRESS", tone: "info",
+    ar: { label: "قيد التنفيذ", meaning: "بدأ الفريق تنفيذ الخدمة.", nextStep: "لا مطلوب منك شيء الآن. سنبلغك عند اكتمالها." },
+    en: { label: "In progress", meaning: "The team has started working on the service.", nextStep: "Nothing is needed from you right now. We'll tell you when it's done." },
+  },
+  completed: {
+    code: "SRV_06_COMPLETED", tone: "success",
+    ar: { label: "مكتملة", meaning: "اكتملت الخدمة.", nextStep: "راجع ملاحظة الفريق إن وُجدت، ويمكنك طلب خدمة أخرى متى احتجت." },
+    en: { label: "Completed", meaning: "The service is complete.", nextStep: "Check the team's note if any; you can request another service any time." },
+  },
+  rejected: {
+    code: "SRV_07_REJECTED", tone: "danger",
+    ar: { label: "مرفوض", meaning: "تعذر قبول الطلب.", reasonMeaning: "تعذر قبول الطلب: {reason}", nextStep: "راجع السبب، ويمكنك تقديم طلب جديد بعد معالجته أو التواصل مع الدعم." },
+    en: { label: "Declined", meaning: "The request couldn't be accepted.", reasonMeaning: "The request couldn't be accepted: {reason}", nextStep: "Check the reason; you can submit a new request once it's resolved, or contact support." },
+  },
+  cancelled: {
+    code: "SRV_08_CANCELLED", tone: "neutral",
+    ar: { label: "ملغى", meaning: "أُلغي الطلب.", reasonMeaning: "أُلغي الطلب: {reason}", nextStep: "يمكنك تقديم طلب جديد متى احتجت الخدمة." },
+    en: { label: "Cancelled", meaning: "The request was cancelled.", reasonMeaning: "The request was cancelled: {reason}", nextStep: "You can submit a new request whenever you need the service." },
+  },
+});
+
 const { APPLICATION_STATUS_TO_DETAILED_STATUS } = require("./roles");
 
 // Statuses where the student must fix something, so a reason is mandatory.
@@ -179,7 +223,26 @@ function documentStatusNotice(document, typeLabel) {
   };
 }
 
+function serviceRequestStatusInfo(request) {
+  const key = SERVICE_REQUEST_STATUS_COPY[request?.status] ? request.status : "submitted";
+  const reason = String(request?.reason || "").trim();
+  const info = pick(SERVICE_REQUEST_STATUS_COPY[key], (copy) => (copy.reasonMeaning && reason ? copy.reasonMeaning.replace("{reason}", reason) : null));
+  return { status: key, ...info, reason: reason || null };
+}
+
+function serviceRequestStatusNotice(request, serviceTitle) {
+  const info = serviceRequestStatusInfo(request);
+  return {
+    title: `${serviceTitle || "طلب الخدمة"}: ${info.ar.label}`,
+    message: `${info.ar.meaning} ${info.ar.nextStep}`,
+    type: info.tone === "success" ? "success" : info.tone === "info" || info.tone === "neutral" ? "info" : "warning",
+  };
+}
+
 module.exports = {
+  SERVICE_REQUEST_STATUS_COPY,
+  serviceRequestStatusInfo,
+  serviceRequestStatusNotice,
   APPLICATION_STATUS_COPY,
   DOCUMENT_STATUS_COPY,
   DOCUMENT_STATUSES_REQUIRING_REASON,

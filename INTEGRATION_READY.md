@@ -38,6 +38,37 @@
 
 السجلات المحلية في جذر worktree: `integration-server-tests.log` و`integration-flutter-tests.log` و`integration-web-build.log` و`integration-flutter-analysis.log`. لا تُرفع بيانات الاختبار أو node_modules أو ملفات البيئة إلى Git.
 
+## المرحلة الرابعة — دورة حياة طلبات الخدمات (24 سبتمبر 2026)
+
+بُنيت على `work/from-main-20260924`. المتطلبات المُضافة:
+
+### السيرفر
+- نموذج `ServiceRequest` مع فهرس جزئي-فريد `activeKey` يمنع طلبين نشطين للطالب/الخدمة نفسيهما.
+- `serviceRequestController` يغطي: إنشاء، قائمة، تفاصيل، إلغاء، رد الطالب (student)، قائمة/تصفية، تحديث الحالة، تعيين (admin).
+- مسارات `/api/students/service-requests` و`/api/admin/service-requests`.
+- صندوق `employeeSections.json` (server + client) + `employee_sections.dart` مُحدَّثة بقسم `service-requests`.
+- `adminController.buildOurServicePayload` يدمج `validateServiceRequestFields` للحقول الجديدة.
+
+### الويب
+- صفحة `AdminServiceRequestsPage` بفلتر الحالة والتعيين ونموذج تحريك الحالة.
+- مسار `/admin/service-requests` في `AppRoutes`.
+- نوع `ServiceRequestItem` وطرق `adminService` المناسبة في `types/index.ts` و`adminService.ts`.
+- زر "طلب هذه الخدمة" في `ServiceDetailsPage` مشروط بـ`requestable !== false`.
+
+### Flutter
+- `StudentRepository`: `createServiceRequest`, `getMyServiceRequests`, `getMyServiceRequest`, `cancelServiceRequest`, `respondToServiceRequest`.
+- `AdminModulesRepository`: `getServiceRequests`, `getServiceRequestAssignees`, `updateServiceRequestStatus`, `assignServiceRequest`.
+- شاشة `StudentServiceRequestsScreen` لعرض طلبات الطالب مع إلغاء ورد.
+- شاشة `AdminServiceRequestsScreen` لإدارة الطلبات في لوحة الموظف.
+- `EmployeeDashboardScreen` مُضاف إليها قسم `service-requests`.
+- `_ServiceDetailScreenState._requestService()` يُرسل طلب الخدمة الحقيقي بدلًا من SupportTicket.
+
+### التحقق
+- اختبار السيرفر `serviceRequests.test.js`: **ok 1** — دورة حياة كاملة، صلاحيات، منع التكرار، إنشاء/إلغاء الفواتير، تعيين، تعارض الإصدار.
+- تحليل Dart: 8 ملاحظات `info` فقط (prefer_const، deprecated)، لا أخطاء.
+- أخطاء TypeScript: cascades من `Cannot find module 'react'` — مشكلة بنية worktree سابقة، ليست من الكود الجديد.
+- بناء Flutter bundle: فشل بسبب `package_config.json` worktree — مشكلة بنية سابقة، ليست من الكود.
+
 ## متطلبات التشغيل قبل نشر الإنتاج
 
 - يلزم MongoDB Atlas أو replica set يدعم المعاملات. هذا مطلوب أصلًا للاستشارات، وأصبح مطلوبًا أيضًا لعمليات المحفظة والسكن. عند قاعدة standalone تفشل العملية بوضوح بدل تنفيذ كتابة جزئية.

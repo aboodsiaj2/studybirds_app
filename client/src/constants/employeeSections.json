@@ -184,6 +184,17 @@
     ]
   },
   {
+    "key": "service-requests",
+    "ar": "طلبات الخدمات",
+    "en": "Service requests",
+    "pages": [
+      "service-requests"
+    ],
+    "resources": [
+      "service-requests"
+    ]
+  },
+  {
     "key": "faqs",
     "ar": "الأسئلة الشائعة",
     "en": "FAQs",

@@ -208,6 +208,10 @@ const buildOurServicePayload = async (body, currentService = null) => {
       ? currentService.slug
       : await buildOurServiceSlug(title, currentService?._id);
 
+  const { validateServiceRequestFields } = require("../constants/serviceCatalog");
+  const requestFieldResult = validateServiceRequestFields(body, currentService || {});
+  if (requestFieldResult.error) throw Object.assign(new Error(requestFieldResult.error), { statusCode: 400 });
+
   return {
     title,
     slug,
@@ -218,6 +222,7 @@ const buildOurServicePayload = async (body, currentService = null) => {
     featured: typeof body.featured === "boolean" ? body.featured : true,
     sortOrder: Number.isFinite(Number(body.sortOrder)) ? Number(body.sortOrder) : 0,
     country: body.country || null,
+    ...requestFieldResult.fields,
   };
 };
 

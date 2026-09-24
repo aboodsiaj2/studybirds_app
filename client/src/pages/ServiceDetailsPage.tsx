@@ -147,9 +147,19 @@ export const ServiceDetailsPage = () => {
                   )}
             </div>
 
+            {normalizedService.requestable !== false && (
+              <Link
+                to="/student/service-requests/new"
+                state={{ serviceId: normalizedService._id, serviceTitle: normalizedService.title }}
+                className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white"
+              >
+                {language === "ar" ? "طلب هذه الخدمة" : "Request this service"}
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            )}
             <Link
               to="/services"
-              className="mt-8 inline-flex items-center gap-2 text-sm font-semibold text-brand-700"
+              className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-brand-700"
             >
               {language === "ar" ? "العودة إلى صفحة الخدمات" : "Back to services page"}
               <ArrowRight className="h-4 w-4" />

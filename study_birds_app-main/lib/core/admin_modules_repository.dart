@@ -315,6 +315,46 @@ class AdminModulesRepository {
     await ApiClient.instance.delete('/admin/exhibitions/$id', token: _token);
   }
 
+  // ---- service requests -------------------------------------------------------
+  Future<List<dynamic>> getServiceRequests({String? status, String? assigned}) async {
+    final q = <String>[];
+    if (status != null) q.add('status=$status');
+    if (assigned != null) q.add('assigned=$assigned');
+    final qs = q.isEmpty ? '' : '?${q.join('&')}';
+    return await ApiClient.instance.get('/admin/service-requests$qs', token: _token) as List<dynamic>;
+  }
+
+  Future<List<dynamic>> getServiceRequestAssignees() async =>
+      await ApiClient.instance.get('/admin/service-requests/assignees', token: _token) as List<dynamic>;
+
+  Future<Map<String, dynamic>> updateServiceRequestStatus(
+    String id, {
+    required String status,
+    required int version,
+    String? reason,
+    String? staffNote,
+    num? amount,
+    String? dueDate,
+  }) async =>
+      await ApiClient.instance.patch('/admin/service-requests/$id', token: _token, body: {
+        'status': status,
+        'version': version,
+        if (reason != null) 'reason': reason,
+        if (staffNote != null) 'staffNote': staffNote,
+        if (amount != null) 'amount': amount,
+        if (dueDate != null) 'dueDate': dueDate,
+      }) as Map<String, dynamic>;
+
+  Future<Map<String, dynamic>> assignServiceRequest(
+    String id, {
+    required String? assignedTo,
+    required int version,
+  }) async =>
+      await ApiClient.instance.patch('/admin/service-requests/$id/assign', token: _token, body: {
+        'assignedTo': assignedTo,
+        'version': version,
+      }) as Map<String, dynamic>;
+
   // ---- generic image upload (Cloudinary via the backend's multer routes) --
   /// Returns the uploaded file's URL. Handles both response shapes used
   /// across the backend: `{url}` for single-file endpoints and

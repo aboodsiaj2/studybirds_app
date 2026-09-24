@@ -382,6 +382,57 @@ class StudentRepository {
     await ApiClient.instance.delete('/students/favorites/$id', token: _token);
   }
 
+  // ---- Service Requests (PRD 35–36, 114) ------------------------------------
+
+  Future<Map<String, dynamic>> createServiceRequest({
+    required String serviceId,
+    String notes = '',
+  }) async {
+    final data = await ApiClient.instance.post(
+      '/students/service-requests',
+      token: _token,
+      body: {'serviceId': serviceId, 'notes': notes},
+    );
+    return data as Map<String, dynamic>;
+  }
+
+  Future<List<dynamic>> getMyServiceRequests() async {
+    final data = await ApiClient.instance
+        .get('/students/service-requests', token: _token);
+    return data as List<dynamic>;
+  }
+
+  Future<Map<String, dynamic>> getMyServiceRequest(String id) async {
+    final data = await ApiClient.instance
+        .get('/students/service-requests/$id', token: _token);
+    return data as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> cancelServiceRequest({
+    required String id,
+    required int version,
+  }) async {
+    final data = await ApiClient.instance.post(
+      '/students/service-requests/$id/cancel',
+      token: _token,
+      body: {'version': version},
+    );
+    return data as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> respondToServiceRequest({
+    required String id,
+    required int version,
+    required String reply,
+  }) async {
+    final data = await ApiClient.instance.post(
+      '/students/service-requests/$id/respond',
+      token: _token,
+      body: {'version': version, 'reply': reply},
+    );
+    return data as Map<String, dynamic>;
+  }
+
   // ---- Knowledge Base -------------------------------------------------------
 
   Future<List<dynamic>> getKnowledgeBase() async {
