@@ -5,6 +5,7 @@ const { OAuth2Client } = require("google-auth-library");
 const asyncHandler = require("../utils/asyncHandler");
 const generateToken = require("../utils/generateToken");
 const { recordReferralSignup } = require("../utils/studentWallet");
+const deleteStudentAccountData = require("../utils/deleteStudentAccount");
 
 const googleClient = new OAuth2Client();
 
@@ -252,6 +253,31 @@ const changePassword = asyncHandler(async (req, res) => {
   res.json({ message: "Password updated successfully" });
 });
 
+const deleteAccount = asyncHandler(async (req, res) => {
+  if (req.user.role !== "student") {
+    res.status(403);
+    throw new Error("Self-service account deletion is available for student accounts only");
+  }
+
+  if (req.body.confirmation !== "DELETE") {
+    res.status(400);
+    throw new Error("Type DELETE to confirm account deletion");
+  }
+
+  const user = await User.findById(req.user._id);
+  if (!user) {
+    res.status(404);
+    throw new Error("User not found");
+  }
+  if (user.password && !(await user.comparePassword(req.body.password))) {
+    res.status(401);
+    throw new Error("Current password is incorrect");
+  }
+
+  await deleteStudentAccountData(user._id);
+  res.json({ message: "Account deleted successfully" });
+});
+
 module.exports = {
   serializeUser,
   ensureStudentProfile,
@@ -260,4 +286,5 @@ module.exports = {
   googleLogin,
   me,
   changePassword,
+  deleteAccount,
 };

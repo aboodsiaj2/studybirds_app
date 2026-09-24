@@ -8,6 +8,7 @@ import '../../core/student_repository.dart';
 import 'security_settings_screen.dart';
 import 'edit_profile_screen.dart';
 import 'student_wallet_screen.dart';
+import 'delete_account_screen.dart';
 
 /// Real Profile screen — fetches GET /api/students/profile. Sections shown
 /// match the StudentProfile schema on the backend.
@@ -375,6 +376,17 @@ class SettingsScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(AppRadius.button)),
             ),
           ),
+          if (AuthSession.instance.currentUser?.role == UserRole.student) ...[
+            const SizedBox(height: 12),
+            TextButton.icon(
+              onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                  builder: (_) => const DeleteAccountScreen())),
+              icon: const Icon(Icons.delete_forever_outlined,
+                  color: AppColors.danger),
+              label: const Text('حذف الحساب والبيانات',
+                  style: TextStyle(color: AppColors.danger)),
+            ),
+          ],
         ],
       ),
     );
