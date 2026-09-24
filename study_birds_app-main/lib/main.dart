@@ -1,5 +1,6 @@
 import 'core/device_lock.dart';
 import 'core/api_client.dart';
+import 'core/offline_cache.dart';
 import 'screens/auth/email_challenge_screen.dart';
 import 'package:flutter/material.dart';
 import 'core/app_theme.dart';
@@ -65,8 +66,29 @@ class StudyBirdsApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Study Birds',
-      builder: (context, child) =>
-          DeviceLockGate(child: child ?? const SizedBox.shrink()),
+      builder: (context, child) => DeviceLockGate(
+        child: ListenableBuilder(
+          listenable: NetworkStatus.instance,
+          builder: (context, _) {
+            final status = NetworkStatus.instance;
+            return Stack(
+              children: [
+                child ?? const SizedBox.shrink(),
+                if (status.isOffline)
+                  Align(
+                    alignment: Alignment.topCenter,
+                    child: SafeArea(
+                      bottom: false,
+                      child: OfflineBanner(
+                        cachedData: status.isShowingCachedData,
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
+        ),
+      ),
       scaffoldMessengerKey: rootScaffoldMessengerKey,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light
