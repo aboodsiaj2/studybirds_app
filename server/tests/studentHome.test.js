@@ -19,8 +19,9 @@ test('the context card follows where the student is in the journey', () => {
   assert.equal(context({ applications: [finalAdmission()] }), 'visa');
   assert.equal(context({ applications: [finalAdmission({ visaCase: { status: 'approved' } })] }), 'travel');
   assert.equal(context({ applications: [finalAdmission({ visaCase: { status: 'approved' } })], arrivals: [{ status: 'submitted', arrivalDate: inDays(12) }] }), 'departure');
-  // A passed scheduled date is not proof that the student actually arrived.
-  assert.equal(context({ applications: [finalAdmission()], arrivals: [{ status: 'submitted', arrivalDate: inDays(-2) }] }), 'departure');
+  // A passed date alone is not an arrival (the trip may have moved); confirmation is.
+  assert.equal(context({ applications: [finalAdmission()], arrivals: [{ status: 'submitted', arrivalDate: inDays(-2) }] }), 'confirm-arrival');
+  assert.equal(context({ applications: [finalAdmission()], arrivals: [{ status: 'submitted', arrivalDate: inDays(-2), pickup: { status: 'arrived' } }] }), 'registration');
   assert.equal(context({ applications: [finalAdmission()], arrivals: [{ status: 'completed', arrivalDate: inDays(-2) }] }), 'registration');
   assert.equal(context({ applications: [finalAdmission({ postAdmission: { registration: { status: 'completed' } } })], arrivals: [{ status: 'completed', arrivalDate: inDays(-20) }] }), 'settled');
   // A draft arrival request doesn't count as a planned trip.
