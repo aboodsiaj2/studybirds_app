@@ -31,7 +31,6 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
 
   Map<String, dynamic>? _overview;
   bool _loadingOverview = false;
-  int _overviewRequest = 0;
 
   final _emailController = TextEditingController();
   final _relationshipController = TextEditingController();
