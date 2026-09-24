@@ -20,8 +20,22 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     'dateOfBirth': 'تاريخ الميلاد (YYYY-MM-DD)',
     'currentEducation': 'الدراسة الحالية',
     'gpa': 'المعدل الدراسي',
+    'englishTest.exam': 'اختبار اللغة الإنجليزية',
+    'englishTest.score': 'النتيجة',
     'targetCountries': 'الدول المستهدفة (افصل بفاصلة)',
+    'preferredFields': 'المجالات المفضلة (افصل بفاصلة)',
+    'preferredDegreeLevel': 'الدرجة الدراسية المطلوبة',
     'intake': 'موعد بدء الدراسة',
+    'studyBudget.min': 'الميزانية الدنيا',
+    'studyBudget.max': 'الميزانية القصوى',
+    'studyBudget.currency': 'عملة الميزانية',
+    'guardianContact.name': 'اسم ولي الأمر',
+    'guardianContact.relationship': 'صلة القرابة',
+    'guardianContact.phone': 'هاتف ولي الأمر',
+    'guardianContact.email': 'بريد ولي الأمر',
+    'emergencyContact.name': 'اسم جهة اتصال الطوارئ',
+    'emergencyContact.relationship': 'صلة القرابة للطوارئ',
+    'emergencyContact.phone': 'هاتف الطوارئ',
     'address': 'العنوان',
     'bio': 'نبذة',
   };
@@ -50,7 +64,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       profile = value;
       loaded = true;
       for (final key in fields.keys) {
-        final raw = value[key];
+        dynamic raw = value;
+        for (final part in key.split('.')) {
+          raw = raw is Map ? raw[part] : null;
+        }
         controllers[key]!.text =
             raw is List ? raw.join('، ') : raw?.toString() ?? '';
       }
@@ -78,7 +95,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       final next = {
         ...profile,
         for (final entry in controllers.entries)
-          entry.key: entry.value.text.trim()
+          if (!entry.key.contains('.')) entry.key: entry.value.text.trim()
       };
       next['targetCountries'] = controllers['targetCountries']!
           .text
@@ -90,6 +107,32 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           ? null
           : controllers['dateOfBirth']!.text.trim();
       next['currentEducationLevel'] = level;
+      next['preferredFields'] = _list('preferredFields');
+      next['englishTest'] = {
+        'exam': controllers['englishTest.exam']!.text.trim(),
+        'score': controllers['englishTest.score']!.text.trim(),
+      };
+      next['guardianContact'] = {
+        'name': controllers['guardianContact.name']!.text.trim(),
+        'relationship':
+            controllers['guardianContact.relationship']!.text.trim(),
+        'phone': controllers['guardianContact.phone']!.text.trim(),
+        'email': controllers['guardianContact.email']!.text.trim(),
+      };
+      next['emergencyContact'] = {
+        'name': controllers['emergencyContact.name']!.text.trim(),
+        'relationship':
+            controllers['emergencyContact.relationship']!.text.trim(),
+        'phone': controllers['emergencyContact.phone']!.text.trim(),
+      };
+      double? number(String key) =>
+          double.tryParse(controllers[key]!.text.trim());
+      next['studyBudget'] = {
+        'min': number('studyBudget.min'),
+        'max': number('studyBudget.max'),
+        'currency':
+            controllers['studyBudget.currency']!.text.trim().toUpperCase(),
+      };
       await StudentRepository.instance.updateProfile(next);
       if (!mounted) return;
       if (widget.onSaved != null) {
@@ -103,6 +146,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       if (mounted) setState(() => saving = false);
     }
   }
+
+  List<String> _list(String key) => controllers[key]!
+      .text
+      .split(RegExp('[,،]'))
+      .map((value) => value.trim())
+      .where((value) => value.isNotEmpty)
+      .toList();
 
   @override
   void dispose() {
@@ -143,13 +193,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           'passportNumber',
           'phone',
           'gpa',
+          'englishTest.score',
+          'studyBudget.min',
+          'studyBudget.max',
           'dateOfBirth'
         ].contains(key)
             ? TextDirection.ltr
             : null,
-        keyboardType: key == 'phone'
+        keyboardType: key.contains('phone')
             ? TextInputType.phone
-            : key == 'gpa'
+            : ['gpa', 'englishTest.score', 'studyBudget.min', 'studyBudget.max']
+                    .contains(key)
                 ? const TextInputType.numberWithOptions(decimal: true)
                 : TextInputType.text,
         minLines: key == 'bio' ? 3 : 1,
@@ -240,13 +294,35 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             const SizedBox(height: 18),
                             field('currentEducation'),
                             field('gpa'),
+                            field('englishTest.exam'),
+                            field('englishTest.score'),
                           ])),
                       FeaturePanel(
                           title: 'خطتك الدراسية',
                           child: Column(children: [
                             field('targetCountries'),
+                            field('preferredFields'),
+                            field('preferredDegreeLevel'),
                             field('intake'),
+                            field('studyBudget.min'),
+                            field('studyBudget.max'),
+                            field('studyBudget.currency'),
                             field('bio')
+                          ])),
+                      FeaturePanel(
+                          title: 'بيانات ولي الأمر',
+                          child: Column(children: [
+                            field('guardianContact.name'),
+                            field('guardianContact.relationship'),
+                            field('guardianContact.phone'),
+                            field('guardianContact.email'),
+                          ])),
+                      FeaturePanel(
+                          title: 'جهة اتصال الطوارئ',
+                          child: Column(children: [
+                            field('emergencyContact.name'),
+                            field('emergencyContact.relationship'),
+                            field('emergencyContact.phone'),
                           ])),
                     ])),
       );
