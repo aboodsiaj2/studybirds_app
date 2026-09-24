@@ -136,6 +136,7 @@ app.use("/api/programs", requireDatabaseConnection, programRoutes);
 app.use("/api/applications", requireDatabaseConnection, applicationRoutes);
 app.use('/api/consultations', requireDatabaseConnection, require('./routes/consultationRoutes'));
 app.use('/api/accommodation', requireDatabaseConnection, require('./routes/accommodationRoutes'));
+app.use('/api/service-orders', requireDatabaseConnection, require('./routes/serviceOrderRoutes'));
 app.use('/api/push-tokens', requireDatabaseConnection, require('./routes/pushRoutes'));
 app.use('/api/community', requireDatabaseConnection, require('./routes/communityRoutes'));
 app.use("/api/admin", requireDatabaseConnection, adminRoutes);

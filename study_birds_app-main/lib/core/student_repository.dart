@@ -242,6 +242,26 @@ class StudentRepository {
     return Map<String, dynamic>.from(data as Map);
   }
 
+  Future<List<dynamic>> getServiceOrders() async {
+    final data =
+        await ApiClient.instance.get('/service-orders/mine', token: _token);
+    return data as List<dynamic>;
+  }
+
+  Future<Map<String, dynamic>> createServiceOrder(
+      {required String serviceId, String notes = ''}) async {
+    final data = await ApiClient.instance.post('/service-orders',
+        token: _token, body: {'serviceId': serviceId, 'notes': notes});
+    return Map<String, dynamic>.from(data as Map);
+  }
+
+  Future<Map<String, dynamic>> cancelServiceOrder(
+      String id, int version) async {
+    final data = await ApiClient.instance.post('/service-orders/$id/cancel',
+        token: _token, body: {'version': version});
+    return Map<String, dynamic>.from(data as Map);
+  }
+
   Future<List<dynamic>> getDocuments() async {
     final data =
         await ApiClient.instance.get('/students/documents', token: _token);
