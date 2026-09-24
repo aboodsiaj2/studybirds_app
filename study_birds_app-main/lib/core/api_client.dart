@@ -1,6 +1,9 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
+
+import 'offline_cache.dart';
 
 /// Thrown by [ApiClient] for any non-2xx response. [message] is the
 /// backend's own `{ message: "..." }` string when present, since the
@@ -17,8 +20,14 @@ class ApiException implements Exception {
 /// Single place that knows the backend's base URL. When the Render URL
 /// changes, this is the only line that needs editing.
 class ApiClient {
-  ApiClient._();
-  static final ApiClient instance = ApiClient._();
+  ApiClient({http.Client? client, PublicApiCache? cache})
+      : _client = client,
+        _cache = cache ?? PublicApiCache();
+
+  static final ApiClient instance = ApiClient();
+
+  final http.Client? _client;
+  final PublicApiCache _cache;
 
   /// Override for staging or production builds with:
   /// `--dart-define=API_BASE_URL=https://your-api.example/api`.
@@ -37,15 +46,43 @@ class ApiClient {
       };
 
   Future<dynamic> get(String path, {String? token}) async {
-    final response =
-        await http.get(Uri.parse('$baseUrl$path'), headers: _headers(token));
-    return _decode(response);
+    final cacheable = PublicApiCache.canCache(path, token);
+    try {
+      final uri = Uri.parse('$baseUrl$path');
+      final client = _client;
+      final response = await (client == null
+              ? http.get(uri, headers: _headers(token))
+              : client.get(uri, headers: _headers(token)))
+          .timeout(const Duration(seconds: 30));
+      NetworkStatus.instance.markOnline();
+      final decoded = _decode(response);
+      if (cacheable) {
+        unawaited(_cache.write(path, decoded).catchError((Object _) {
+          // A full or unavailable local store must never hide fresh data.
+        }));
+      }
+      return decoded;
+    } on http.ClientException {
+      return _cachedOrRethrow(path, cacheable);
+    } on TimeoutException {
+      return _cachedOrRethrow(path, cacheable);
+    }
+  }
+
+  Future<dynamic> _cachedOrRethrow(String path, bool cacheable) async {
+    final cached = cacheable ? await _cache.read(path) : null;
+    NetworkStatus.instance.markOffline(cached: cached != null);
+    if (cached != null) return cached;
+    throw const ApiException(
+        0, 'تعذر الاتصال بالخادم. تحقق من الإنترنت وحاول مجددًا.');
   }
 
   Future<dynamic> post(String path,
       {Map<String, dynamic>? body, String? token}) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl$path'),
+    final uri = Uri.parse('$baseUrl$path');
+    final client = _client;
+    final response = await (client == null ? http.post : client.post)(
+      uri,
       headers: _headers(token),
       body: body != null ? jsonEncode(body) : null,
     );
@@ -54,8 +91,10 @@ class ApiClient {
 
   Future<dynamic> patch(String path,
       {Map<String, dynamic>? body, String? token}) async {
-    final response = await http.patch(
-      Uri.parse('$baseUrl$path'),
+    final uri = Uri.parse('$baseUrl$path');
+    final client = _client;
+    final response = await (client == null ? http.patch : client.patch)(
+      uri,
       headers: _headers(token),
       body: body != null ? jsonEncode(body) : null,
     );
@@ -64,8 +103,10 @@ class ApiClient {
 
   Future<dynamic> put(String path,
       {Map<String, dynamic>? body, String? token}) async {
-    final response = await http.put(
-      Uri.parse('$baseUrl$path'),
+    final uri = Uri.parse('$baseUrl$path');
+    final client = _client;
+    final response = await (client == null ? http.put : client.put)(
+      uri,
       headers: _headers(token),
       body: body != null ? jsonEncode(body) : null,
     );
@@ -74,7 +115,9 @@ class ApiClient {
 
   Future<dynamic> delete(String path,
       {Map<String, dynamic>? body, String? token}) async {
-    final response = await http.delete(Uri.parse('$baseUrl$path'),
+    final uri = Uri.parse('$baseUrl$path');
+    final client = _client;
+    final response = await (client == null ? http.delete : client.delete)(uri,
         headers: _headers(token), body: body == null ? null : jsonEncode(body));
     return _decode(response);
   }

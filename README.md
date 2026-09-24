@@ -71,6 +71,8 @@ Seeded accounts:
 - In-app assistant guidance without external AI provider setup
 - Admin stats and application management
 - Seed data for countries, universities, programs, testimonials, and users
+- Offline fallback in the Flutter app for public universities, programs,
+  scholarships, and content previously loaded during the last seven days
 
 ## Deployment env vars
 

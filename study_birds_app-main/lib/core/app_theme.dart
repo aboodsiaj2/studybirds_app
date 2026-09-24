@@ -409,7 +409,9 @@ class ErrorState extends StatelessWidget {
 /// cached data can still show, but sensitive actions should be blocked
 /// elsewhere in the screen while this banner is visible.
 class OfflineBanner extends StatelessWidget {
-  const OfflineBanner({super.key});
+  const OfflineBanner({super.key, this.cachedData = false});
+
+  final bool cachedData;
 
   @override
   Widget build(BuildContext context) {
@@ -417,13 +419,20 @@ class OfflineBanner extends StatelessWidget {
       width: double.infinity,
       color: AppColors.neutral,
       padding: const EdgeInsets.symmetric(vertical: 8),
-      child: const Row(
+      child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.wifi_off_rounded, size: 14, color: Colors.white),
-          SizedBox(width: 6),
-          Text('لا يوجد اتصال بالإنترنت — يتم عرض آخر بيانات محفوظة',
-              style: TextStyle(color: Colors.white, fontSize: 11.5)),
+          const Icon(Icons.wifi_off_rounded, size: 14, color: Colors.white),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              cachedData
+                  ? 'لا يوجد اتصال — يتم عرض آخر بيانات محفوظة'
+                  : 'لا يوجد اتصال بالإنترنت',
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.white, fontSize: 11.5),
+            ),
+          ),
         ],
       ),
     );
