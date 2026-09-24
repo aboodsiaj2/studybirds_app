@@ -30,6 +30,12 @@ test('assignment permissions, eligibility, version conflicts, audit and student 
   await call('PATCH',route,staff,{...body,dueAt:'invalid'},400);
   await call('PATCH',route,staff,body); await call('PATCH',route,staff,body,409);
   let saved=await Application.findById(app._id); assert.equal(saved.assignmentHistory.length,1); assert.equal(String(saved.assignmentHistory[0].changedBy),String(staff._id)); assert.equal(saved.status,'submitted');
+  const assignmentView=await call('GET',route,staff);
+  assert.equal(assignmentView.assignmentHistory.length,1);
+  assert.equal(assignmentView.assignmentHistory[0].advisor.name,'Advisor');
+  assert.equal(assignmentView.assignmentHistory[0].changedBy.name,'Advisor');
+  assert.equal(assignmentView.assignmentHistory[0].source,'manual');
+  assert.equal(assignmentView.assignmentHistory[0].changedBy.email,undefined);
   const overview=await call('GET','/students/overview',student); assert.equal(overview.journeys[0].followUp.advisor.name,'Advisor'); assert.equal(overview.journeys[0].followUp.overdue,true);
   assert.deepEqual((await call('GET','/students/overview',other)).journeys,[]);
   const { sendFollowUpReminders, startFollowUpReminderScheduler } = require('../src/utils/followUpReminders');
@@ -63,6 +69,7 @@ test('assignment permissions, eligibility, version conflicts, audit and student 
   saved=await Application.findById(app._id); assert.equal(saved.assignedAdvisor,null); assert.equal(saved.assignmentHistory.length,2);
   const requeueRoute=`${route}/requeue`;
   const view=await call('GET',route,staff); assert.equal(view.application.hasAssignmentHistory,true); assert.equal(view.application.autoAssignmentEligible,false);
+  assert.equal(view.assignmentHistory.length,2); assert.equal(view.assignmentHistory[0].advisor,null); assert.equal(view.assignmentHistory[0].changedBy.name,'Advisor');
   await call('POST',requeueRoute,student,{version:saved.__v},403);
   await call('POST',requeueRoute,staff,{version:saved.__v+1},409);
   await call('POST',requeueRoute,staff,{version:saved.__v});
@@ -70,7 +77,9 @@ test('assignment permissions, eligibility, version conflicts, audit and student 
   saved=await Application.findById(app._id);
   assert.equal(saved.autoAssignmentEligible,true); assert.equal(saved.assignmentHistory.length,3);
   assert.equal(saved.assignmentHistory[2].source,'requeued'); assert.equal(String(saved.assignmentHistory[2].changedBy),String(staff._id));
-  assert.equal((await call('GET',route,staff)).application.autoAssignmentEligible,true);
+  const requeuedView=await call('GET',route,staff);
+  assert.equal(requeuedView.application.autoAssignmentEligible,true);
+  assert.equal(requeuedView.assignmentHistory[0].source,'requeued');
   await Application.updateOne({_id:app._id},{$set:{status:'rejected'}});
   await call('POST',requeueRoute,staff,{version:saved.__v},409);
   await call('PATCH',route,staff,{...body,version:2},409);

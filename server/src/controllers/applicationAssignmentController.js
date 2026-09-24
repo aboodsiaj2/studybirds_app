@@ -9,6 +9,10 @@ const getAssignment = asyncHandler(async (req, res) => {
   const application = await Application.findById(req.params.id).select('assignedAdvisor followUpDueAt __v autoAssignmentEligible assignmentHistory status detailedStatus').lean();
   if (!application) return res.status(404).json({ message: 'Application not found' });
   const advisors = await User.find(eligible).select('name').sort({ name: 1 }).lean();
+  const history = (application.assignmentHistory || []).slice(-50).reverse();
+  const peopleIds = [...new Set(history.flatMap(entry => [entry.advisor, entry.changedBy]).filter(Boolean).map(String))];
+  const people = peopleIds.length ? await User.find({ _id: { $in: peopleIds } }).select('name').lean() : [];
+  const peopleById = new Map(people.map(person => [String(person._id), person.name]));
   res.json({
     application: {
       assignedAdvisor: application.assignedAdvisor, followUpDueAt: application.followUpDueAt, __v: application.__v,
@@ -18,6 +22,14 @@ const getAssignment = asyncHandler(async (req, res) => {
       isQueuedForAutomaticAssignment: isAutomaticAssignmentStage(application) && !application.assignedAdvisor && application.autoAssignmentEligible === true,
     },
     advisors,
+    assignmentHistory: history.map(entry => ({
+      _id: entry._id,
+      advisor: entry.advisor ? { _id: entry.advisor, name: peopleById.get(String(entry.advisor)) || null } : null,
+      changedBy: entry.changedBy ? { _id: entry.changedBy, name: peopleById.get(String(entry.changedBy)) || null } : null,
+      dueAt: entry.dueAt || null,
+      changedAt: entry.changedAt,
+      source: entry.source || 'manual',
+    })),
   });
 });
 const updateAssignment = asyncHandler(async (req, res) => {

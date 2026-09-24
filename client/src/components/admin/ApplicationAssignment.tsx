@@ -2,7 +2,15 @@ import { useEffect, useState } from 'react';
 import { api } from '../../lib/api';
 import { useLanguage } from '../../hooks/useLanguage';
 import { AdminConfirmationModal } from './AdminConfirmationModal';
-type State = { application: { assignedAdvisor?: string; followUpDueAt?: string; __v: number; autoAssignmentEligible?: boolean; hasAssignmentHistory?: boolean; canRequeue?: boolean; isQueuedForAutomaticAssignment?: boolean }; advisors: { _id: string; name: string }[] };
+type HistoryEntry = {
+  _id: string;
+  advisor: { _id: string; name: string | null } | null;
+  changedBy: { _id: string; name: string | null } | null;
+  dueAt: string | null;
+  changedAt: string;
+  source: 'manual' | 'automatic' | 'requeued';
+};
+type State = { application: { assignedAdvisor?: string; followUpDueAt?: string; __v: number; autoAssignmentEligible?: boolean; hasAssignmentHistory?: boolean; canRequeue?: boolean; isQueuedForAutomaticAssignment?: boolean }; advisors: { _id: string; name: string }[]; assignmentHistory: HistoryEntry[] };
 export function ApplicationAssignment({ id }: { id: string }) {
   const { language } = useLanguage(); const ar = language === 'ar';
   const [data, setData] = useState<State>(); const [advisor, setAdvisor] = useState('');
@@ -36,6 +44,12 @@ export function ApplicationAssignment({ id }: { id: string }) {
     finally { setBusy(false); }
   }
   const requeueable = !!data?.application.canRequeue && !advisor;
+  const formatDate = (value: string) => new Intl.DateTimeFormat(ar ? 'ar' : 'en', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
+  const sourceLabel = (source: HistoryEntry['source']) => ({
+    manual: ar ? 'يدوي' : 'Manual',
+    automatic: ar ? 'تلقائي' : 'Automatic',
+    requeued: ar ? 'إعادة للطابور' : 'Re-queued',
+  })[source];
   return <section className="my-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
     <h3 className="font-semibold text-slate-900">{ar ? 'مسؤول متابعة الطلب' : 'Application follow-up owner'}</h3>
     {data && <div className="mt-3 grid gap-3 sm:grid-cols-2">
@@ -54,6 +68,21 @@ export function ApplicationAssignment({ id }: { id: string }) {
       <button disabled={busy} onClick={() => setConfirmRequeue(true)} className="min-h-11 rounded-xl border border-amber-300 bg-white px-4 text-sm text-amber-900">{ar ? 'إعادة إلى طابور التوزيع التلقائي' : 'Re-queue for automatic assignment'}</button>
     </div>}
     <button disabled={busy} onClick={() => void load()} className="mt-2 min-h-11 text-sm">{ar ? 'تحديث بيانات التعيين' : 'Refresh assignment'}</button>
+    {!!data?.assignmentHistory.length && <details className="mt-3 rounded-xl border border-slate-200 bg-white p-3">
+      <summary className="cursor-pointer font-semibold text-slate-800">{ar ? `سجل التعيين (${data.assignmentHistory.length})` : `Assignment history (${data.assignmentHistory.length})`}</summary>
+      <ol className="mt-3 space-y-3">
+        {data.assignmentHistory.map(entry => <li key={entry._id} className="border-s-2 border-slate-200 ps-3 text-sm text-slate-700">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-semibold text-slate-900">{entry.advisor?.name || (entry.advisor ? (ar ? 'مستخدم سابق' : 'Former user') : (ar ? 'إلغاء التعيين' : 'Unassigned'))}</span>
+            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs">{sourceLabel(entry.source)}</span>
+          </div>
+          <p className="mt-1">{ar ? 'نفّذ التغيير:' : 'Changed by:'} {entry.changedBy?.name || (entry.source === 'automatic' ? (ar ? 'النظام' : 'System') : (ar ? 'مستخدم سابق' : 'Former user'))}</p>
+          {entry.dueAt && <p>{ar ? 'موعد المتابعة:' : 'Follow-up due:'} {formatDate(entry.dueAt)}</p>}
+          <time dateTime={entry.changedAt} className="text-xs text-slate-500">{formatDate(entry.changedAt)}</time>
+        </li>)}
+      </ol>
+      {data.assignmentHistory.length === 50 && <p className="mt-3 text-xs text-slate-500">{ar ? 'تظهر آخر 50 عملية تعيين.' : 'Showing the latest 50 assignment changes.'}</p>}
+    </details>}
     <AdminConfirmationModal open={confirm} title={ar ? 'تأكيد مسؤول المتابعة' : 'Confirm follow-up assignment'} description={`${data?.advisors.find(a => a._id === advisor)?.name || (ar ? 'إلغاء التعيين' : 'Unassign')} — ${due || (ar ? 'دون موعد' : 'No deadline')}`} confirmLabel={ar ? 'تأكيد' : 'Confirm'} cancelLabel={ar ? 'رجوع' : 'Back'} loading={busy} onClose={() => { if (!busy) setConfirm(false); }} onConfirm={() => void save()} />
     <AdminConfirmationModal open={confirmRequeue} title={ar ? 'تأكيد إعادة الطلب للطابور' : 'Confirm re-queuing'} description={ar ? 'سيُعاد فحص هذا الطلب في التوزيع التلقائي القادم إن توفّر موظف مؤهل بحمل متاح.' : 'This application will be considered in the next automatic scan if an eligible advisor has open capacity.'} confirmLabel={ar ? 'تأكيد' : 'Confirm'} cancelLabel={ar ? 'رجوع' : 'Back'} loading={busy} onClose={() => { if (!busy) setConfirmRequeue(false); }} onConfirm={() => void requeue()} />
   </section>;
