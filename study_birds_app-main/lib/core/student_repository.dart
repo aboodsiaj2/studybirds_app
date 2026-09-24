@@ -227,6 +227,24 @@ class StudentRepository {
         .patch('/students/notifications/$id/read', token: _token);
   }
 
+  /// GET /api/students/wallet — the student's own referral code (generated
+  /// on first read), balance, referrals and last 100 ledger entries.
+  Future<Map<String, dynamic>> getWallet() async {
+    final data =
+        await ApiClient.instance.get('/students/wallet', token: _token);
+    return Map<String, dynamic>.from(data as Map);
+  }
+
+  /// POST /api/students/wallet/redeem — spends wallet credit on one of the
+  /// student's unpaid invoices (the server checks balance and invoice
+  /// atomically). Returns {invoice, balance}.
+  Future<Map<String, dynamic>> redeemWalletCredit(
+      {required String invoiceId, required num amount}) async {
+    final data = await ApiClient.instance.post('/students/wallet/redeem',
+        token: _token, body: {'invoiceId': invoiceId, 'amount': amount});
+    return Map<String, dynamic>.from(data as Map);
+  }
+
   Future<Map<String, dynamic>> getFinancials() async {
     final data =
         await ApiClient.instance.get('/students/financials', token: _token);
