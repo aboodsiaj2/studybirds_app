@@ -82,7 +82,12 @@ app.get("/ping", (req, res) => {
 });
 
 app.get("/api/health", (req, res) => {
-  res.json({ status: "ok", service: "study-birds-api" });
+  const databaseReady = isDatabaseReady();
+  res.status(databaseReady ? 200 : 503).json({
+    status: databaseReady ? "ok" : "degraded",
+    service: "study-birds-api",
+    database: databaseReady ? "connected" : "disconnected",
+  });
 });
 
 const requireDatabaseConnection = (req, res, next) => {

@@ -2,11 +2,11 @@ services:
   - type: web
     name: study-birds-web
     runtime: static
-    repo: https://github.com/IslamOsman1/STUDY-BIRDS
+    repo: https://github.com/aboodsiaj2/studybirds_app
     rootDir: client
     plan: free
     autoDeployTrigger: commit
-    buildCommand: npm install && npm run build
+    buildCommand: npm ci && npm run build
     staticPublishPath: dist
     routes:
       - type: rewrite
@@ -21,15 +21,19 @@ services:
         sync: false
       - key: VITE_GOOGLE_CLIENT_ID
         sync: false
+      - key: VITE_CONTACT_EMAIL
+        sync: false
+      - key: VITE_WHATSAPP_URL
+        sync: false
   - type: web
     name: study-birds-api
     runtime: node
-    repo: https://github.com/IslamOsman1/STUDY-BIRDS
+    repo: https://github.com/aboodsiaj2/studybirds_app
     rootDir: server
     plan: starter
     region: oregon
     autoDeployTrigger: commit
-    buildCommand: npm install
+    buildCommand: npm ci
     startCommand: npm start
     healthCheckPath: /api/health
     disk:
@@ -37,6 +41,8 @@ services:
       mountPath: /opt/render/project/src/uploads
       sizeGB: 1
     envVars:
+      - key: NODE_ENV
+        value: production
       - key: MONGODB_URI
         sync: false
       - key: JWT_SECRET
@@ -51,5 +57,51 @@ services:
         sync: false
       - key: GOOGLE_CLIENT_ID
         sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: 587
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: SMTP_FROM
+        sync: false
+      - key: CONTACT_FORM_TO
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: FIREBASE_SERVICE_ACCOUNT_JSON
+        sync: false
+      - key: AI_BASE_URL
+        sync: false
+      - key: AI_API_KEY
+        sync: false
+      - key: AI_MODEL
+        sync: false
+      - key: APPLE_CLIENT_ID
+        sync: false
+      - key: APPLE_REDIRECT_URI
+        sync: false
+      - key: WEBAUTHN_RP_ID
+        sync: false
+      - key: WEBAUTHN_ORIGINS
+        sync: false
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_VERIFY_SERVICE_SID
+        sync: false
+      - key: FOLLOW_UP_REMINDERS_ENABLED
+        value: false
+      - key: CONSULTATION_REMINDERS_ENABLED
+        value: false
+      - key: AUTO_ASSIGNMENT_ENABLED
+        value: false
       - key: UPLOAD_DIR
         value: /opt/render/project/src/uploads

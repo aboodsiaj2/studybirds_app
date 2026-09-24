@@ -18,7 +18,7 @@ Project settings:
 
 - Service type: `Static Site`
 - Root directory: `client`
-- Build command: `npm install && npm run build`
+- Build command: `npm ci && npm run build`
 - Publish directory: `dist`
 
 Environment variables:
@@ -44,11 +44,16 @@ Project settings:
 
 - Service type: `Web Service`
 - Root directory: `server`
-- Build command: `npm install`
+- Build command: `npm ci`
 - Start command: `npm start`
 - Health check path: `/api/health`
 
 This repo includes `render.yaml` for a Render Blueprint.
+
+The Blueprint points to `https://github.com/aboodsiaj2/studybirds_app` and follows
+its default `main` branch. `/ping` is the process liveness endpoint, while
+`/api/health` returns `503` until MongoDB is connected, so Render does not mark a
+database-less instance healthy.
 
 Important:
 
@@ -84,6 +89,28 @@ Environment variables to provide:
 6. If you use more than one frontend hostname, add them to `CLIENT_URLS`.
 7. If Google sign-in is enabled, add both Render URLs to your Google OAuth allowed origins.
 8. Redeploy both services after setting the final env vars.
+
+Before deploying, validate the server values locally without printing secrets:
+
+```bash
+NODE_ENV=production npm run validate:env
+```
+
+The production server also runs this check automatically before it starts.
+`MONGODB_URI`, a JWT secret of at least 32 characters, and a public HTTPS
+`CLIENT_URL` are mandatory.
+
+## Flutter API target
+
+The checked-in default still targets the existing API. Build staging and
+production artifacts with an explicit endpoint so a URL change does not require
+editing Dart source:
+
+```bash
+flutter build appbundle --dart-define=API_BASE_URL=https://study-birds-api.onrender.com/api
+```
+
+Use the exact deployed HTTPS API URL including `/api`.
 
 ## Example Production Values
 
