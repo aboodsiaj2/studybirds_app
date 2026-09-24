@@ -4,7 +4,7 @@ const studentWalletEntrySchema = new mongoose.Schema(
   {
     student: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, index: true },
     direction: { type: String, enum: ["credit", "debit"], required: true },
-    kind: { type: String, enum: ["referral-reward", "redemption", "adjustment"], required: true },
+    kind: { type: String, enum: ["referral-reward", "redemption", "adjustment", "promo-credit"], required: true },
     amount: { type: Number, required: true, min: 0 },
     notes: { type: String, default: "", trim: true, maxlength: 500 },
     relatedReferral: { type: mongoose.Schema.Types.ObjectId, ref: "StudentReferral" },

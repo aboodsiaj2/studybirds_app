@@ -373,5 +373,27 @@
       "community-suspensions",
       "community-settings"
     ]
+  },
+  {
+    "key": "alumni",
+    "ar": "شبكة الخريجين",
+    "en": "Alumni network",
+    "pages": [
+      "alumni"
+    ],
+    "resources": [
+      "alumni"
+    ]
+  },
+  {
+    "key": "promo-codes",
+    "ar": "رموز العروض",
+    "en": "Promo codes",
+    "pages": [
+      "promo-codes"
+    ],
+    "resources": [
+      "promo-codes"
+    ]
   }
 ]

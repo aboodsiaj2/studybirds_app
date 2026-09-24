@@ -355,6 +355,25 @@ class AdminModulesRepository {
         'version': version,
       }) as Map<String, dynamic>;
 
+  // ---- alumni -----------------------------------------------------------
+
+  Future<List<dynamic>> getAlumni() async =>
+      await ApiClient.instance.get('/admin/alumni', token: _token) as List<dynamic>;
+
+  Future<Map<String, dynamic>> updateAlumni(String id, Map<String, dynamic> body) async =>
+      await ApiClient.instance.patch('/admin/alumni/$id', token: _token, body: body) as Map<String, dynamic>;
+
+  // ---- promo codes ------------------------------------------------------
+
+  Future<List<dynamic>> getPromoCodes() async =>
+      await ApiClient.instance.get('/admin/promo-codes', token: _token) as List<dynamic>;
+
+  Future<Map<String, dynamic>> createPromoCode(Map<String, dynamic> body) async =>
+      await ApiClient.instance.post('/admin/promo-codes', token: _token, body: body) as Map<String, dynamic>;
+
+  Future<Map<String, dynamic>> updatePromoCode(String id, Map<String, dynamic> body) async =>
+      await ApiClient.instance.patch('/admin/promo-codes/$id', token: _token, body: body) as Map<String, dynamic>;
+
   // ---- generic image upload (Cloudinary via the backend's multer routes) --
   /// Returns the uploaded file's URL. Handles both response shapes used
   /// across the backend: `{url}` for single-file endpoints and

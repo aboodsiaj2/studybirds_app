@@ -41,6 +41,8 @@ const List<EmployeeSection> kEmployeeSections = [
   EmployeeSection(key: 'community', labelAr: 'مجتمع الطلاب', labelEn: 'Student community'),
   EmployeeSection(key: 'university-accounts', labelAr: 'حسابات الجامعات', labelEn: 'University accounts'),
   EmployeeSection(key: 'consultations', labelAr: 'الاستشارات والمواعيد', labelEn: 'Consultations'),
+  EmployeeSection(key: 'alumni', labelAr: 'شبكة الخريجين', labelEn: 'Alumni network'),
+  EmployeeSection(key: 'promo-codes', labelAr: 'رموز العروض', labelEn: 'Promo codes'),
 ];
 
 /// A conservative subset of sections that are actually reachable from

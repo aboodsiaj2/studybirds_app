@@ -21,6 +21,7 @@ import 'admin_content_crud_screens.dart';
 import 'admin_singleton_hub_screens.dart';
 import 'employee_consultations_screen.dart';
 import 'admin_service_requests_screen.dart';
+import 'admin_alumni_promo_screens.dart';
 
 /// Admin/Employee Home. HONESTY NOTE: the backend has no per-employee
 /// "tasks assigned to me" concept — role="admin" sees the whole platform
@@ -112,6 +113,10 @@ final List<_SectionEntry> _sectionScreens = [
       (_) => const AdminExhibitionsScreen()),
   _SectionEntry('events', Icons.event_outlined, 'الفعاليات',
       (_) => const AdminEventsHubScreen()),
+  _SectionEntry('alumni', Icons.school_rounded, 'شبكة الخريجين',
+      (_) => const AdminAlumniScreen()),
+  _SectionEntry('promo-codes', Icons.local_offer_outlined, 'رموز العروض',
+      (_) => const AdminPromoCodesScreen()),
 ];
 
 class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {

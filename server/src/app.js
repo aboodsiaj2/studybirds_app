@@ -138,6 +138,8 @@ app.use("/api/content", requireDatabaseConnection, contentRoutes);
 // NEW paths — brand new prefixes, cannot shadow or be shadowed by anything above.
 app.use("/api/parents", requireDatabaseConnection, parentRoutes);
 app.use("/api/university-portal", requireDatabaseConnection, universityPortalRoutes);
+app.use("/api/promo", requireDatabaseConnection, require("./routes/promoRoutes"));
+app.use("/api/alumni", requireDatabaseConnection, require("./routes/alumniRoutes"));
 
 app.use(notFound);
 app.use(errorHandler);

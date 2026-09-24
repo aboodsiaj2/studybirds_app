@@ -119,6 +119,8 @@ const {
   getServiceRequestsAdmin, getServiceRequestAssignees,
   updateServiceRequestStatus, assignServiceRequest,
 } = require("../controllers/serviceRequestController");
+const { getPromoCodesAdmin, createPromoCode, updatePromoCode } = require("../controllers/promoController");
+const { listAlumniAdmin, updateAlumniAdmin } = require("../controllers/alumniController");
 const { protect, authorize } = require("../middleware/authMiddleware");
 const upload = require("../middleware/uploadMiddleware");
 
@@ -249,5 +251,10 @@ router.get("/service-requests/assignees", getServiceRequestAssignees);
 router.get("/service-requests", getServiceRequestsAdmin);
 router.patch("/service-requests/:id", updateServiceRequestStatus);
 router.patch("/service-requests/:id/assign", assignServiceRequest);
+router.get("/promo-codes", getPromoCodesAdmin);
+router.post("/promo-codes", createPromoCode);
+router.patch("/promo-codes/:id", updatePromoCode);
+router.get("/alumni", listAlumniAdmin);
+router.patch("/alumni/:id", updateAlumniAdmin);
 
 module.exports = router;

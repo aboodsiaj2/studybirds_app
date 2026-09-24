@@ -1,7 +1,10 @@
 import 'core/device_lock.dart';
 import 'core/api_client.dart';
+import 'core/cache_service.dart';
+import 'core/analytics_service.dart';
 import 'screens/auth/email_challenge_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:app_links/app_links.dart';
 import 'core/app_theme.dart';
 import 'core/auth_session.dart';
 import 'core/animations.dart';
@@ -56,7 +59,28 @@ import 'screens/roles/admin_users_access_screen.dart';
 /// already been disposed and its own context is no longer valid.
 final rootScaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
-void main() => runApp(const StudyBirdsApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await CacheService.instance.init();
+  FlutterError.onError = (details) {
+    AnalyticsService.instance.logError(
+      details.exceptionAsString(),
+      error: details.exception,
+      stack: details.stack,
+    );
+    FlutterError.presentError(details);
+  };
+  _initDeepLinks();
+  runApp(const StudyBirdsApp());
+}
+
+void _initDeepLinks() {
+  final appLinks = AppLinks();
+  appLinks.uriLinkStream.listen((uri) {
+    AnalyticsService.instance.logEvent('deep_link', parameters: {'uri': uri.toString()});
+    // TODO: route to appropriate screen based on uri.path
+  }, onError: (_) {});
+}
 
 class StudyBirdsApp extends StatelessWidget {
   const StudyBirdsApp({super.key});

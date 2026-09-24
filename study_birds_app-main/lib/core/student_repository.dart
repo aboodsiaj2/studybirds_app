@@ -484,7 +484,7 @@ class StudentRepository {
   Future<void> registerPushToken(
       {required String token, required String platform}) async {
     await ApiClient.instance.post(
-      '/push',
+      '/push-tokens',
       token: _token,
       body: {'token': token, 'platform': platform},
     );
@@ -492,7 +492,7 @@ class StudentRepository {
 
   Future<void> unregisterPushToken(String deviceToken) async {
     await ApiClient.instance.delete(
-      '/push',
+      '/push-tokens',
       token: _token,
       body: {'token': deviceToken},
     );
@@ -537,5 +537,43 @@ class StudentRepository {
       if (avoidFields != null) 'avoidFields': avoidFields,
     });
     return data as Map<String, dynamic>;
+  }
+
+  // ---- Promo Codes ----------------------------------------------------------
+
+  Future<Map<String, dynamic>> redeemPromoCode(String code) async {
+    final data = await ApiClient.instance.post(
+      '/promo/redeem',
+      token: _token,
+      body: {'code': code},
+    );
+    return data as Map<String, dynamic>;
+  }
+
+  Future<List<dynamic>> getMyPromoRedemptions() async {
+    final data = await ApiClient.instance.get('/promo/my-redemptions', token: _token);
+    return data as List<dynamic>;
+  }
+
+  // ---- Alumni ---------------------------------------------------------------
+
+  Future<Map<String, dynamic>?> getMyAlumniProfile() async {
+    final data = await ApiClient.instance.get('/alumni/me', token: _token);
+    if (data == null) return null;
+    return data as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> upsertMyAlumniProfile(Map<String, dynamic> body) async {
+    final data = await ApiClient.instance.put('/alumni/me', token: _token, body: body);
+    return data as Map<String, dynamic>;
+  }
+
+  Future<List<dynamic>> listAlumni({String? field, String? country}) async {
+    final params = <String, String>{};
+    if (field != null) params['field'] = field;
+    if (country != null) params['country'] = country;
+    final query = params.isEmpty ? '' : '?${params.entries.map((e) => '${e.key}=${Uri.encodeQueryComponent(e.value)}').join('&')}';
+    final data = await ApiClient.instance.get('/alumni/$query', token: _token);
+    return data as List<dynamic>;
   }
 }
